@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AlpenSync</string>
+
+    <!-- M1 debug screen (plan Section 6 acceptance harness, not the final UX) -->
+    <string name="debug_title">M1 debug login</string>
+    <string name="debug_subtitle">Temporary owner-acceptance screen: live SRP login, address list, one decrypted blob. Not the final UX.</string>
+    <string name="username_label">Proton username</string>
+    <string name="password_label">Password</string>
+    <string name="login_button">Log in</string>
+    <string name="logging_in">Contacting Proton…</string>
+    <string name="totp_prompt">This account has two-factor authentication. Enter the current 6-digit code from your authenticator app.</string>
+    <string name="totp_label">6-digit code</string>
+    <string name="totp_submit">Verify code</string>
+    <string name="session_expired_notice">Session expired or was revoked — please log in again.</string>
+    <string name="session_incomplete_notice">Stored session was missing key material and was wiped — please log in again.</string>
+    <string name="login_success">Login successful</string>
+    <string name="restored_session_note">Restored from the persisted session (no fresh login) — token persistence works.</string>
+    <string name="logged_in_as">Account: %1$s</string>
+    <string name="addresses_header">Addresses on this account</string>
+    <string name="address_row">%1$s — send: %2$s, receive: %3$s, keys: %4$d</string>
+    <string name="yes">yes</string>
+    <string name="no">no</string>
+    <string name="decryption_keys_count">Keyring unlocked: %1$d decryption keys in memory (user + address).</string>
+    <string name="proof_header">M1 acceptance — one decrypted blob</string>
+    <string name="proof_ok">Decryption OK — an address-key Token was decrypted with the primary user key (%1$d bytes; contents never displayed, Rule 1).</string>
+    <string name="proof_no_token">No Token-bearing address key on this account — nothing to decrypt.</string>
+    <string name="proof_failed">Token decryption FAILED (%1$s) — M1 acceptance NOT met.</string>
+    <string name="logout_button">Log out (wipe session)</string>
+    <string name="account_loading">Fetching addresses and decrypting…</string>
+    <string name="error_title">Something went wrong</string>
+    <string name="error_wrong_credentials">Login failed — wrong username or password (or the connection dropped mid-login).</string>
+    <string name="error_appversion">Proton rejected our app-version token — the API moved, update needed.</string>
+    <string name="error_network">Could not reach the Proton API — check the network connection. (Also possible: Proton changed the API shape.)</string>
+    <string name="error_human_verification">Proton demands human verification (captcha) before this login can proceed. If you cancelled the in-app check, retry to see it again. Manual fallback: log in once with this account at proton.me in a browser to clear the challenge, then retry here.</string>
+    <string name="hv_title">Prove you’re human</string>
+    <string name="hv_cancel">Cancel</string>
+    <string name="error_two_password">This account uses a separate mailbox password (two-password mode) — not supported yet.</string>
+    <string name="error_security_check">A security check on Proton’s login parameters failed (modulus signature or server proof). Aborted fail-closed — possible MITM or an API change.</string>
+    <string name="error_key_setup">Login succeeded but key setup failed — the session was wiped. Try again.</string>
+    <string name="error_totp">That two-factor code was rejected (or the 2FA call failed) — try again.</string>
+    <string name="error_state">Internal state error — please log in again.</string>
+    <string name="error_server_code">Proton returned error %1$s — a response this app version has no typed handling for. The login was aborted safely; retry, and if it persists please report the code. Details are in the device log (tag AlpenSync).</string>
+    <string name="error_unexpected">Unexpected error (%1$s) — AlpenSync contained it instead of crashing. Details are in the device log (tag AlpenSync).</string>
+    <string name="error_unknown">Unexpected failure — reason: %1$s</string>
+    <string name="retry_button">Retry</string>
+    <string name="back_button">Back to login</string>
+
+    <!-- M2d debug sync section (logged-in screen; debug-harness quality, real UX at M4) -->
+    <string name="sync_header">Contacts sync (M2 debug)</string>
+    <string name="sync_permission_rationale">AlpenSync writes your Proton contacts into the phone\'s contact storage so the dialer and messengers can see them, and reads back only the rows it wrote. Contacts are never sent anywhere except to Proton. Grant contacts access to enable sync.</string>
+    <string name="sync_permission_grant">Grant contacts access</string>
+    <string name="sync_account_missing">Sync account could not be created — reopen the app and retry.</string>
+    <string name="sync_interval_label">How often to check Proton for changes made elsewhere (web, another device). Edits made on this phone do not wait for it. The OS batches background work, so short intervals are approximate.</string>
+    <string name="sync_interval_minutes">%1$d min</string>
+    <string name="sync_interval_daily">Daily</string>
+    <string name="sync_now_button">Sync now</string>
+    <string name="sync_running">Syncing…</string>
+    <string name="sync_report_counts">Listed %1$d · new %2$d · changed %3$d · unchanged %4$d · tombstoned %5$d (pending %6$d) · swept %7$d · errors %8$d</string>
+    <string name="sync_report_detail">Fetched %1$d · skipped name-only %2$d · card failures %3$d · unverified %4$d · restored %5$d</string>
+    <string name="sync_report_guard_abort">Mass-delete guard ABORTED the run before any write: %1$d pending deletions vs a last-known total of %2$d. Nothing was applied; the phone kept all existing contacts.</string>
+    <string name="sync_error_no_session">No logged-in session with key material — log in first.</string>
+    <string name="sync_error_human_verification">Proton demands human verification (Code 9001) — log in once with this account at proton.me in a browser, then retry.</string>
+    <string name="sync_error_appversion">Proton rejected our app-version token — the API moved, update needed.</string>
+    <string name="sync_error_key_unlock">Keyring unlock failed — this session can\'t decrypt contacts. Log out and log in again.</string>
+    <string name="sync_error_network">Sync failed (network or contacts-provider IO) — check the connection and retry.</string>
+    <string name="sync_error_unexpected">Sync hit an unexpected error — AlpenSync contained it instead of crashing. Details are in the device log (tag AlpenSync).</string>
+</resources>

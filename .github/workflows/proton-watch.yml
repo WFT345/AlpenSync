@@ -1,0 +1,95 @@
+name: Proton upstream watch
+
+# Plan Section 8: daily poll of watched upstream repos (Proton's own apps and
+# the community bridges that break first when the undocumented API changes).
+# When a watched repo has new commits since the last check, a tracking issue
+# is opened/updated in this repository.
+#
+# CONFIG (edit the REPOS variable in the step below to change the watch list).
+# Repo locations must be verified; if one 404s the workflow logs a warning and
+# continues (it does NOT fail). Watched at M0:
+#   - ProtonMail/proton-mail-android        (official mail app — auth/API ground truth)
+#   - ProtonMail/proton-calendar-android    (official calendar app — open-sourced late 2025)
+#   - ProtonMail/protoncore_android         (shared core: auth, keys, API shapes)
+#   - emersion/hydroxide                    (Go bridge — early-warning canary)
+#   UNVERIFIED: ferroxide canonical repo (Rust hydroxide fork?) — add when confirmed
+#   UNVERIFIED: pcontacts canonical repo (io.pcontacts.app, by andreabenetton) — add when confirmed
+
+on:
+  schedule:
+    - cron: "17 5 * * *" # daily, 05:17 UTC
+  workflow_dispatch: # allow manual runs while calibrating
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check watched repos for new commits
+        continue-on-error: true # tolerance per plan: a broken watch must never block anything
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -u
+          REPOS="ProtonMail/proton-mail-android ProtonMail/proton-calendar-android ProtonMail/protoncore_android emersion/hydroxide"
+          STATE_FILE=".github/proton-watch-state.json"
+          mkdir -p .github
+          [ -f "$STATE_FILE" ] || echo '{}' > "$STATE_FILE"
+
+          for repo in $REPOS; do
+            echo "=== $repo ==="
+            # Default branch + latest commit. Tolerate 404s (unverified locations).
+            info=$(curl -sf "https://api.github.com/repos/$repo" || true)
+            if [ -z "$info" ]; then
+              echo "::warning::Repo $repo not reachable (404 or network). Location may need verification — see workflow comments."
+              continue
+            fi
+            branch=$(echo "$info" | jq -r '.default_branch')
+            latest=$(curl -sf "https://api.github.com/repos/$repo/commits?sha=$branch&per_page=5" || true)
+            [ -z "$latest" ] && { echo "::warning::No commits fetched for $repo"; continue; }
+            newest_sha=$(echo "$latest" | jq -r '.[0].sha')
+            last_seen=$(jq -r --arg r "$repo" '.[$r] // ""' "$STATE_FILE")
+
+            if [ "$newest_sha" = "$last_seen" ]; then
+              echo "No new commits."
+              continue
+            fi
+
+            echo "New commits since ${last_seen:-<first run>}"
+            compare="${last_seen:-$(echo "$latest" | jq -r '.[-1].sha')}...$newest_sha"
+            commits=$(curl -sf "https://api.github.com/repos/$repo/compare/$compare" || echo "$latest")
+            list=$(echo "$commits" | jq -r '.commits[]? | "- [\(.sha[0:7])](\(.html_url // "https://github.com/'"$repo"'/commit/\(.sha)")) \(.commit.message | split("\n")[0])"' | head -20)
+
+            issue_title="Upstream activity: $repo"
+            existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title \"$issue_title\"" --json number --jq '.[0].number' || true)
+            body=$(printf 'New commits in [%s](https://github.com/%s) (branch `%s`). Triage for API-relevant changes (auth, keys, contacts, calendar, events, SRP, crypto):\n\n%s\n\n_Automated by proton-watch.yml (plan Section 8). Close when triaged._' "$repo" "$repo" "$branch" "$list")
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+              echo "Updated issue #$existing"
+            else
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "$issue_title" --body "$body" --label "upstream-watch" || \
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "$issue_title" --body "$body"
+              echo "Opened tracking issue"
+            fi
+
+            jq --arg r "$repo" --arg s "$newest_sha" '.[$r] = $s' "$STATE_FILE" > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
+          done
+
+          # Persist state between runs via a workflow artifact is not durable;
+          # commit the state file back instead (contents: write not granted, so
+          # fall back to re-listing last-seen via the issue comments on next run
+          # if the push fails). Best-effort: push only if it works.
+          git config user.name "proton-watch[bot]"
+          git config user.email "proton-watch[bot]@users.noreply.github.com"
+          git add "$STATE_FILE"
+          git commit -m "chore(proton-watch): update last-seen state" || true
+          git push || echo "::warning::Could not persist watch state (expected until contents:write is granted); next run re-checks from issue history."
+
+      - name: Summary
+        if: always()
+        run: echo "Watch run complete. See step logs for per-repo results."

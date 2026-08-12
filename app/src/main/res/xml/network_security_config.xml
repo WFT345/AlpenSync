@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network lockdown (plan Rule 3 + Section 3.6):
+  - Cleartext traffic is off everywhere.
+  - The app will only ever talk to Proton infrastructure; the domain list
+    below exists so that policy is explicit and auditable. The exact API
+    hosts are verified against the live service at M1 — if Proton serves
+    API traffic from other hosts, this list is corrected then, with the
+    verification noted in DATAFLOW.md.
+  - `includeSubdomains="true"` on proton.me deliberately covers
+    verify.proton.me: the human-verification challenge page (Code 9001
+    flow, ADR 0004 Q3) loads in the in-app WebView from that host.
+  - Deliberately NO certificate pinning (plan Section 3.6): users and
+    auditors must be able to inspect traffic with their own proxy.
+    Pinning would undermine the project's verifiability promise.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">proton.me</domain>
+    </domain-config>
+</network-security-config>

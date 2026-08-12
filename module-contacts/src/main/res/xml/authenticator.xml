@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+  ADR 0005 Section 5: registers the app.alpensync.account account type. The
+  accountType value is FROZEN at the first M2 build any device installs —
+  changing it orphans every RawContacts row ever written (pcontacts' warning).
+-->
+<account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="app.alpensync.account"
+    android:icon="@drawable/ic_account"
+    android:smallIcon="@drawable/ic_account"
+    android:label="@string/account_label" />

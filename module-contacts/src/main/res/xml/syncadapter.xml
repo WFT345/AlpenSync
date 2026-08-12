@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+  ADR 0005 Section 5 SyncAdapter registration.
+  - contentAuthority must equal ContactsContract.AUTHORITY.
+  - accountType must match @xml/authenticator.
+  - userVisible="true": the account is togglable in Settings → Accounts → Sync.
+  - supportsUploading="false" at M2 (one-way read); M3 flips it to true.
+  - allowParallelSyncs="false": one sync per account — interleaved writes
+    against the same RawContacts rows must not happen.
+  - isAlwaysSyncable="true": sync without a manual user opt-in.
+-->
+<sync-adapter xmlns:android="http://schemas.android.com/apk/res/android"
+    android:contentAuthority="com.android.contacts"
+    android:accountType="app.alpensync.account"
+    android:userVisible="true"
+    android:supportsUploading="false"
+    android:allowParallelSyncs="false"
+    android:isAlwaysSyncable="true" />

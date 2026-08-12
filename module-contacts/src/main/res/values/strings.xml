@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shown in Settings → Accounts and Contacts apps' account picker. -->
+    <string name="account_label">AlpenSync</string>
+</resources>

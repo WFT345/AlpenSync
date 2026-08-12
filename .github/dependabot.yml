@@ -1,0 +1,15 @@
+# Dependabot: keep Gradle deps and GitHub Actions current (plan Rule 11 still
+# applies — Dependabot PRs update exact pins, never introduce ranges).
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

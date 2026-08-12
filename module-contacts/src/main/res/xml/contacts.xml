@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+  ADR 0005 Section 5: the ContactsContract data kinds the app.alpensync.account
+  account supports (referenced via android.provider.CONTACTS_STRUCTURE on the
+  sync-adapter service). Ships at M2 even though upload is off — this is what
+  makes the account selectable in Contacts apps' "Save contact to" picker (the
+  plan §6 M3 UX trap's only durable mitigation). The set mirrors the M2
+  write-set in writer/ContactsContractOps (name, email, phone, postal,
+  organization, note, im, photo, website); no custom MIME types at M2.
+-->
+<ContactsAccountType xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ContactsDataKind
+        android:mimeType="vnd.android.cursor.item/name"
+        android:summaryColumn="data1"
+        android:detailColumn="data2" />
+
+    <ContactsDataKind
+        android:mimeType="vnd.android.cursor.item/email_v2"
+        android:summaryColumn="data1"
+        android:detailColumn="data2" />
+
+    <ContactsDataKind
+        android:mimeType="vnd.android.cursor.item/phone_v2"
+        android:summaryColumn="data1"
+        android:detailColumn="data2" />
+
+    <ContactsDataKind
+        android:mimeType="vnd.android.cursor.item/postal-address_v2"
+        android:summaryColumn="data1"
+        android:detailColumn="data2" />
+
+    <ContactsDataKind
+        android:mimeType="vnd.android.cursor.item/organization"
+        android:summaryColumn="data1"
+        android:detailColumn="data4" />
+
+    <ContactsDataKind
+        android:mimeType="vnd.android.cursor.item/note"
+        android:summaryColumn="data1" />
+
+    <ContactsDataKind
+        android:mimeType="vnd.android.cursor.item/im"
+        android:summaryColumn="data1"
+        android:detailColumn="data2" />
+
+    <ContactsDataKind
+        android:mimeType="vnd.android.cursor.item/photo"
+        android:summaryColumn="data15" />
+
+    <ContactsDataKind
+        android:mimeType="vnd.android.cursor.item/website"
+        android:summaryColumn="data1"
+        android:detailColumn="data2" />
+
+</ContactsAccountType>

@@ -1,0 +1,97 @@
+# detekt configuration for AlpenSync — implements plan Rule 16 (mechanical
+# simplicity limits: functions <=40 lines, files <=300 lines, complexity <=10)
+# on top of detekt's default config. Runs in CI on every PR (see ci.yml).
+
+build:
+  maxIssues: 0
+
+config:
+  validation: true
+  warningsAsErrors: false
+
+complexity:
+  active: true
+  LongMethod:
+    active: true
+    threshold: 40            # plan Rule 16: functions <= 40 lines
+  LargeClass:
+    active: true
+    threshold: 300           # plan Rule 16: files/classes <= 300 lines
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 10            # plan Rule 16: cyclomatic complexity <= 10
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 30
+    thresholdInClasses: 30
+    thresholdInInterfaces: 15
+  LongParameterList:
+    active: true
+    functionThreshold: 8
+    constructorThreshold: 8
+
+style:
+  active: true
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+  ForbiddenComment:
+    active: true
+    comments:
+      - reason: 'plan Rule 15: no TODOs in merged code — track work as issues instead'
+        value: 'TODO:'
+      - reason: 'plan Rule 15: no FIXMEs in merged code — track work as issues instead'
+        value: 'FIXME:'
+  # plan Rule 1 (secrets never leak): all :core:* logging must go through
+  # SafeLog, whose fixed event templates make it impossible to log
+  # credentials. Raw android.util.Log imports are banned everywhere EXCEPT
+  # SafeLog.kt itself — its default sink forwards the fixed, non-secret
+  # events to logcat under one fixed tag.
+  ForbiddenImport:
+    active: true
+    excludes: ['**/SafeLog.kt']
+    imports:
+      - 'android.util.Log'
+      - 'android.util.Log.*'
+  ForbiddenMethodCall:
+    active: true
+    methods:
+      - reason: 'plan Rule 1: stack traces can carry secrets — log via SafeLog events instead'
+        value: 'java.lang.Throwable.printStackTrace()'
+      - reason: 'plan Rule 1: stdout is not a logging channel — use SafeLog'
+        value: 'kotlin.io.ConsoleKt.println(java.lang.Object)'
+
+naming:
+  active: true
+
+potential-bugs:
+  active: true
+  UnsafeCast:
+    active: true           # plan Rule 5: no unchecked casts on network data
+  UnsafeCallOnNullableType:
+    active: true           # plan Rule 5: no `!!` on anything that crossed the network
+
+coroutines:
+  active: true
+
+exceptions:
+  active: true
+  SwallowedException:
+    active: true
+  TooGenericExceptionCaught:
+    active: true
+    exceptionNames:
+      - ArrayIndexOutOfBoundsException
+      - Error
+      - Exception
+      - IllegalMonitorStateException
+      - NullPointerException
+      - IndexOutOfBoundsException
+      - RuntimeException
+      - Throwable
+
+performance:
+  active: true
+
+empty-blocks:
+  active: true

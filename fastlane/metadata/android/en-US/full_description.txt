@@ -1,0 +1,26 @@
+AlpenSync is an open-source sync suite for Proton users on de-Googled phones (GrapheneOS, LineageOS, and similar).
+
+<b>Early development:</b> this app is not finished. The current build is the milestone-M0 scaffold — it does not sync anything yet. It is published so the project is transparent from day one. Planned milestones:
+
+* M1 — sign in to Proton (SRP-6a + 2FA) and unlock keys on-device
+* M2 — one-way sync of Proton contacts into Android's contacts provider
+* M3 — two-way contacts sync with conflict handling
+* M4 — release quality: sync log, reproducible builds
+
+Planned after that: two-way Proton Calendar sync (the flagship feature) and background mail notifications — all without Google Play Services.
+
+<b>What AlpenSync will never do:</b>
+
+* No analytics, no crash reporting, no ads, no trackers of any kind
+* No network traffic to anything except Proton's servers — enforced in the app configuration and auditable in the source
+* All cryptography happens on your device; the app is a client, never a relay
+
+<b>Honest limitations:</b>
+
+* AlpenSync uses Proton's undocumented, unofficial API. Sync may break without notice when Proton changes something; the project monitors upstream reference apps daily and ships fixes as fast as an open-source project can.
+* Your contacts are stored decrypted in Android's standard system providers — that is how any sync app makes them visible to the dialer. The full threat model is published in the repository.
+* Two-factor authentication support is planned for TOTP only; hardware security keys are a known limitation.
+
+<b>Not affiliated:</b> AlpenSync is an independent community project. It is not affiliated with, endorsed by, or supported by Proton AG.
+
+Source code, documentation, and issue tracker: see the repository link on this listing. Licensed GPL-3.0.

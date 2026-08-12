@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Least privilege (plan Rule 6): every permission below exists for a named
+  consumer, and nothing else is requested.
+    - INTERNET: the Proton API client (:core:api) cannot function without it.
+    - READ_CONTACTS / WRITE_CONTACTS (M2d): the SyncAdapter writes RawContacts
+      under our own account type and reads back only what it wrote; granted
+      at runtime with an honest rationale on the debug screen.
+    - GET_ACCOUNTS / AUTHENTICATE_ACCOUNTS / MANAGE_ACCOUNTS: account
+      creation + lookup for our own account type (same-uid authenticator
+      needs none of them on API 26+, but older calls check them; declared
+      like pcontacts does — they grant nothing beyond our own account).
+    - READ/WRITE_SYNC_SETTINGS + READ_SYNC_STATS: marking our account
+      syncable and poking requestSync from the WorkManager scheduler.
+  The account/sync services themselves are declared in :module-contacts'
+  manifest and merged in.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission
+        android:name="android.permission.AUTHENTICATE_ACCOUNTS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.MANAGE_ACCOUNTS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.READ_SYNC_STATS" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AlpenSync">
+        <!--
+          configChanges: Compose re-lays-out on its own, so the activity must
+          NOT be recreated. Recreation dropped the whole login flow — a fresh
+          LoginController meant an in-flight 2FA prompt or verification
+          challenge lost its stashed credentials and could never complete.
+          Handling the change here (rather than saving state) is also the
+          Rule 1 answer: an unlocked password must never reach a saved-state
+          Bundle, so there is nothing to persist.
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|keyboard|navigation|uiMode|density|fontScale|layoutDirection|locale"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

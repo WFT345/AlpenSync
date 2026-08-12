@@ -1,0 +1,46 @@
+# Built artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+build/
+*/build/
+
+# Gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Local configuration (SDK path, signing, machine-specific JDK)
+local.properties
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+.cxx/
+captures/
+.externalNativeBuild/
+
+# Kotlin
+.kotlin/
+
+# Signing keys — never commit
+*.keystore
+*.jks
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# OWASP dependency-check local data/cache
+dependency-check-data/
+
+# Documentation and internal notes are not published (owner decision,
+# 2026-08-12). Covers README/ARCHITECTURE/THREAT_MODEL/SECURITY, the project
+# plan, and docs/adr + docs/research. LICENSE is not .md and IS published --
+# GPL-3.0 requires it to travel with the source. No .md is a build input, so
+# a fresh clone still compiles.
+*.md

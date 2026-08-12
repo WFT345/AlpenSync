@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+  M2d account + sync boilerplate (ADR 0005 Section 5), declared in the
+  library so manifest merger pulls both services into :app. Both are
+  exported because AccountManager / the sync framework bind across
+  processes; the intent-filters restrict what the bindings can be used for.
+  No permissions are declared here — they live in :app's manifest with the
+  least-privilege commentary (plan Rule 6).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- AccountAuthenticator surface: registers the app.alpensync.account
+             type in Settings → Accounts. -->
+        <service
+            android:name=".account.AlpenSyncAuthenticatorService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator" />
+        </service>
+
+        <!-- SyncAdapter surface for ContactsContract.AUTHORITY. The
+             CONTACTS_STRUCTURE meta-data (@xml/contacts) declares the data
+             kinds this account supports, which puts the account in Contacts
+             apps' "save to" picker (the M3 UX trap's durable mitigation). -->
+        <service
+            android:name=".sync.AlpenSyncService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/syncadapter" />
+            <meta-data
+                android:name="android.provider.CONTACTS_STRUCTURE"
+                android:resource="@xml/contacts" />
+        </service>
+    </application>
+
+</manifest>

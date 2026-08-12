@@ -1,0 +1,202 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "f372e3efeccd0d12c7413a85c2f14d88",
+    "entities": [
+      {
+        "tableName": "contact_map",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`account_name` TEXT NOT NULL, `proton_contact_id` TEXT NOT NULL, `proton_uid` TEXT, `android_raw_contact_id` INTEGER NOT NULL, `modify_time` INTEGER NOT NULL, `content_hash` TEXT NOT NULL, `photo_hash` TEXT, `is_verified` INTEGER NOT NULL, `sync_status` INTEGER NOT NULL, `last_error` TEXT, `last_synced_at` INTEGER NOT NULL, PRIMARY KEY(`account_name`, `proton_contact_id`))",
+        "fields": [
+          {
+            "fieldPath": "accountName",
+            "columnName": "account_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protonContactId",
+            "columnName": "proton_contact_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protonUid",
+            "columnName": "proton_uid",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "androidRawContactId",
+            "columnName": "android_raw_contact_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modifyTime",
+            "columnName": "modify_time",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contentHash",
+            "columnName": "content_hash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photoHash",
+            "columnName": "photo_hash",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isVerified",
+            "columnName": "is_verified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "sync_status",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastError",
+            "columnName": "last_error",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastSyncedAt",
+            "columnName": "last_synced_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "account_name",
+            "proton_contact_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_contact_map_android_raw_contact_id",
+            "unique": false,
+            "columnNames": [
+              "android_raw_contact_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_contact_map_android_raw_contact_id` ON `${TABLE_NAME}` (`android_raw_contact_id`)"
+          },
+          {
+            "name": "index_contact_map_proton_uid",
+            "unique": false,
+            "columnNames": [
+              "proton_uid"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_contact_map_proton_uid` ON `${TABLE_NAME}` (`proton_uid`)"
+          }
+        ]
+      },
+      {
+        "tableName": "tombstones",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`account_name` TEXT NOT NULL, `proton_contact_id` TEXT NOT NULL, `android_raw_contact_id` INTEGER NOT NULL, `deleted_at` INTEGER NOT NULL, `expires_at` INTEGER NOT NULL, PRIMARY KEY(`account_name`, `proton_contact_id`))",
+        "fields": [
+          {
+            "fieldPath": "accountName",
+            "columnName": "account_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protonContactId",
+            "columnName": "proton_contact_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "androidRawContactId",
+            "columnName": "android_raw_contact_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAt",
+            "columnName": "deleted_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expiresAt",
+            "columnName": "expires_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "account_name",
+            "proton_contact_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_tombstones_expires_at",
+            "unique": false,
+            "columnNames": [
+              "expires_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_tombstones_expires_at` ON `${TABLE_NAME}` (`expires_at`)"
+          }
+        ]
+      },
+      {
+        "tableName": "sync_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`account_name` TEXT NOT NULL, `last_event_id` TEXT, `last_full_sync_at` INTEGER, `last_incremental_sync_at` INTEGER, `last_known_total` INTEGER NOT NULL, PRIMARY KEY(`account_name`))",
+        "fields": [
+          {
+            "fieldPath": "accountName",
+            "columnName": "account_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastEventId",
+            "columnName": "last_event_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastFullSyncAt",
+            "columnName": "last_full_sync_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastIncrementalSyncAt",
+            "columnName": "last_incremental_sync_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastKnownTotal",
+            "columnName": "last_known_total",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "account_name"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f372e3efeccd0d12c7413a85c2f14d88')"
+    ]
+  }
+}
