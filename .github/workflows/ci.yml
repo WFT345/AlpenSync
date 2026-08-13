@@ -13,7 +13,7 @@ jobs:
     name: Build, test, lint, detekt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -37,7 +37,7 @@ jobs:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # full history: secrets must not hide in old commits
       - uses: gitleaks/gitleaks-action@v2
@@ -53,7 +53,7 @@ jobs:
     # Tracked in DEPENDENCIES.md.
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4

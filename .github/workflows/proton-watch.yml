@@ -28,7 +28,7 @@ jobs:
   watch:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check watched repos for new commits
         continue-on-error: true # tolerance per plan: a broken watch must never block anything
