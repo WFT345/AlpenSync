@@ -6,7 +6,6 @@
 // gains the authenticator stub (ADR 0005 Sections 1/5/6).
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -21,12 +20,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
     }
 
     // Robolectric needs the merged manifest + resources on the test classpath

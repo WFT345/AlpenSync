@@ -1,14 +1,16 @@
 # Version catalog — exact versions only (plan Rule 11: pin and verify).
 # Any version bump requires a justification in DEPENDENCIES.md.
 #
-# M1 note: kotlin/AGP and all networking/crypto pins match pcontacts'
-# gradle/libs.versions.toml @ bf9b0c5 — the combination live-verified
-# against the production Proton API (docs/research/m1-auth-api-notes.md §6).
-# kotlinx-serialization 1.11.0 requires a Kotlin 2.4.x compiler, hence the
-# kotlin bump from the M0 pin (2.1.21).
+# M1 note: networking/crypto pins match pcontacts' gradle/libs.versions.toml
+# @ bf9b0c5 — the combination live-verified against the production Proton API
+# (docs/research/m1-auth-api-notes.md §6). kotlinx-serialization 1.11.0
+# requires a Kotlin 2.4.x compiler, hence the kotlin bump from the M0 pin
+# (2.1.21). AGP 9.3.1 + Gradle 9.7.0 are a later toolchain jump; AGP 8.x
+# cannot run on Gradle 9.6+.
 
 [versions]
-agp = "8.11.2"
+# AGP 9.3.1 pairs with Gradle 9.7.0. AGP 8.x cannot run on Gradle 9.6+.
+agp = "9.3.1"
 kotlin = "2.4.10"
 compose-bom = "2025.05.01"
 activity-compose = "1.13.0"
@@ -80,7 +82,7 @@ room = ["androidx-room-runtime", "androidx-room-ktx"]
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# kotlin-android is gone: AGP 9 ships built-in Kotlin.
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }

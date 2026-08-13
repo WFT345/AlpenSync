@@ -4,7 +4,6 @@
 // (THREAT_MODEL.md; pcontacts ADR-0008 — SQLCipher deliberately rejected).
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
 }
 
@@ -19,12 +18,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
     }
 
     // Robolectric needs the merged manifest + resources on the test classpath

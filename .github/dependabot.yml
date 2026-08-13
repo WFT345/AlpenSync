@@ -7,15 +7,6 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
-    ignore:
-      # AGP 9 is a major toolchain jump. Take it as its own project, not a bot PR.
-      - dependency-name: "agp"
-        update-types: ["version-update:semver-major"]
-      # Gradle 9 is the AGP 9 pairing (AGP 8.11 requires Gradle 8.13).
-      - dependency-name: "gradle"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "gradle-wrapper"
-        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
