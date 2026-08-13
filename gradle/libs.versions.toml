@@ -30,7 +30,7 @@ ezvcard = "0.12.2"
 ksp = "2.3.10"
 androidx-room = "2.7.2"
 robolectric = "4.16.1"
-androidx-test-core = "1.6.1"
+androidx-test-core = "1.7.0"
 # M2d: WorkManager (the periodic requestSync poker) + the androidTest runner
 # stack — all pins match pcontacts @ bf9b0c5 (docs/research/m2-contacts-notes.md
 # Section 4.1; the WorkManager pin is their shipped, live-verified one).
