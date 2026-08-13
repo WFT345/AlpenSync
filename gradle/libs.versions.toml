@@ -8,7 +8,7 @@
 # kotlin bump from the M0 pin (2.1.21).
 
 [versions]
-agp = "8.11.2"
+agp = "9.3.1"
 kotlin = "2.4.10"
 compose-bom = "2025.05.01"
 activity-compose = "1.10.1"
