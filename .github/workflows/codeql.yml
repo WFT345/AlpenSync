@@ -38,7 +38,7 @@ jobs:
           build-mode: manual
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Build for analysis
         run: ./gradlew assembleDebug
