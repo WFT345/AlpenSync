@@ -33,6 +33,7 @@ It is not affiliated with, endorsed by, or supported by Proton AG or the Graphen
 
 ## Source
 
+- Website: https://alpensync.org
 - Repository: https://github.com/WFT345/AlpenSync
 - README: https://github.com/WFT345/AlpenSync/blob/main/README.md
 - Privacy: https://github.com/WFT345/AlpenSync/blob/main/PRIVACY.md

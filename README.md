@@ -12,6 +12,11 @@
 </p>
 
 <p align="center">
+  <a href="https://alpensync.org">alpensync.org</a>
+</p>
+
+<p align="center">
+  <a href="https://alpensync.org"><img src="https://img.shields.io/badge/site-alpensync.org-9bb4c4?style=flat-square&labelColor=07090c" alt="alpensync.org"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-9bb4c4?style=flat-square&labelColor=07090c" alt="GPL-3.0"></a>
   <a href="#status"><img src="https://img.shields.io/badge/status-in%20development-9bb4c4?style=flat-square&labelColor=07090c" alt="In development"></a>
   <a href="#status"><img src="https://img.shields.io/badge/android-8%2B-9bb4c4?style=flat-square&labelColor=07090c" alt="Android 8+"></a>
@@ -31,6 +36,8 @@
 <p align="center">
   <img src="docs/public/social.jpg" width="640" alt="AlpenSync">
 </p>
+
+Site: [alpensync.org](https://alpensync.org). Source: this repository.
 
 AlpenSync is an independent, GPL-3.0 Android client that syncs [Proton Mail](https://proton.me) contacts with the phone you actually use. It is built for [GrapheneOS](https://grapheneos.org) and other de-Googled Android. There is no Google account, no Play Services, and no AlpenSync server. The durable copy of your address book is Proton.
 

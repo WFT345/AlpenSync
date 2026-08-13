@@ -14,6 +14,7 @@ AlpenSync is an independent, community open-source project. It is not a company,
 
 The people responsible for this notice are the copyright holders of AlpenSync as listed in the source repository.
 
+Site: https://alpensync.org
 Project: https://github.com/WFT345/AlpenSync
 
 There is no AlpenSync server, account system, or analytics backend. We do not operate a service that receives, stores, or sells your contacts.

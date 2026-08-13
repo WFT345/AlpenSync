@@ -77,7 +77,7 @@ These terms may be updated in the source repository and in the app. The effectiv
 
 ## 11. Contact
 
-https://github.com/WFT345/AlpenSync  
-Security: `SECURITY.md` in that repository
+https://alpensync.org
+https://github.com/WFT345/AlpenSync
 
 These terms describe the conditions under which the software is offered. They are not legal advice to you.
