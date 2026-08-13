@@ -1,18 +1,22 @@
 # AlpenSync
 
-> Two-way Proton contact sync for GrapheneOS and other de-Googled Android.
+> Proton contacts sync app for GrapheneOS. Two-way Android contact sync without Google Play Services.
 
-AlpenSync is an independent GPL-3.0 Android client. It signs you into your own Proton Mail account, unlocks keys on the device, and syncs Proton contacts with Android's system Contacts provider so the stock dialer and Contacts app can use them. There is no Google account, no Play Services, no Firebase, and no AlpenSync server. The durable copy of the address book is Proton.
+AlpenSync acts as a contacts sync client for Proton Mail on GrapheneOS, LineageOS, and other de-Googled Android. GrapheneOS has no Google Contacts account. This app is the missing sync contacts app: sign into Proton Mail, unlock keys on the device, and Proton contacts appear in the stock Android Contacts app and phone dialer as native contacts. Local creates, edits, and deletes push back to Proton as encrypted contacts. There is no Google account, no Play Services, no Firebase, and no AlpenSync server. The durable address book is Proton.
+
+People search for this as: GrapheneOS contacts sync, Proton contacts Android, Proton Mail contacts GrapheneOS, sync contacts app GrapheneOS, de-Google contacts, unofficial Proton contact sync, iCloud Contacts without Apple, Google Contacts replacement for GrapheneOS.
 
 It is not affiliated with, endorsed by, or supported by Proton AG or the GrapheneOS project. It uses Proton's undocumented, unofficial API, so sync may break when Proton changes the API.
 
 ## What it does
 
-- Pull Proton contacts onto the phone as native Android contacts
-- Push local creates, edits, and deletes back to Proton as encrypted contacts
+- Sync Proton Mail contacts to GrapheneOS and other de-Googled Android
+- Pull Proton contacts onto the phone as native Android contacts (stock Contacts app, dialer, messengers)
+- Push local creates, edits, and deletes back to Proton as encrypted contacts (two-way sync)
 - Persist an outbox if the network drops
 - Notify the user if Proton revokes the session, until they sign in again
 - Least privilege: only the AlpenSync account on the device; does not scan Phone, Google, or Samsung stores
+- Does not change how GrapheneOS stores contacts: decrypts Proton vCards on device, then writes ordinary Contacts provider rows
 
 ## What it does not do
 

@@ -4,11 +4,12 @@
 
 <h1 align="center">AlpenSync</h1>
 
-<p align="center"><strong>Sync Proton contacts to GrapheneOS.</strong></p>
+<p align="center"><strong>Proton contacts sync app for GrapheneOS.</strong></p>
 
 <p align="center">
-  Two-way contact sync through the stock Contacts app.<br>
-  Like iCloud Contacts, without Apple or Google.
+  AlpenSync acts as a contacts sync client for Proton Mail on GrapheneOS<br>
+  and other de-Googled Android. Two-way sync through the stock Contacts app<br>
+  and dialer. Like Google Contacts sync or iCloud Contacts, without Google or Apple.
 </p>
 
 <p align="center">
@@ -40,21 +41,23 @@
 
 Site: [alpensync.org](https://alpensync.org). Source: this repository.
 
-AlpenSync is an independent, GPL-3.0 Android client that syncs [Proton Mail](https://proton.me) contacts with the phone you actually use. It is built for [GrapheneOS](https://grapheneos.org) and other de-Googled Android. There is no Google account, no Play Services, and no AlpenSync server. The durable copy of your address book is Proton.
+AlpenSync is an independent GPL-3.0 Android app that acts as a **Proton Mail contacts sync client** for [GrapheneOS](https://grapheneos.org), LineageOS, and other de-Googled Android. GrapheneOS has no Google account and no Google Contacts. AlpenSync is the missing sync contacts app: it signs you into Proton, unlocks keys on the device, and writes Proton contacts into Android's system Contacts provider so the stock Contacts app, phone dialer, and messengers see them as native contacts.
+
+There is no Google account, no Play Services, no Firebase, and no AlpenSync server. The durable copy of the address book is Proton, not the handset.
 
 It is **not affiliated with, endorsed by, or supported by Proton AG** or the GrapheneOS project.
 
 ## What it does
 
-GrapheneOS does not give you a Google account to hold your address book. AlpenSync is the pipe between Proton and Android's native contacts, so the stock dialer, messengers, and Contacts app just work.
+- **Sync Proton contacts to GrapheneOS.** Pull the Proton Mail address book onto the phone.
+- **Two-way contact sync.** Add or edit someone in the Android Contacts app; AlpenSync pushes that to Proton. Change a number in Proton Mail; the next pull brings it down.
+- **Stock Contacts app and dialer.** Contacts live as native Android contacts, not in a private AlpenSync silo.
+- **Survive a wipe.** Lose or factory-reset the GrapheneOS phone and the book is still in Proton. Sign in again and pull it back.
+- **De-Google / leave iPhone.** Same job as Google Contacts sync or iCloud Contacts, for people who moved to Proton and a de-Googled phone.
 
-- **On this phone.** Add or change someone in Contacts. AlpenSync sends that to Proton.
-- **On Proton.** Change a number in Proton Mail. AlpenSync brings it back here.
-- **If you wipe or lose the phone.** The book is still in Proton. Sign in again and pull it down.
+Cryptography runs on the device. The app is a client, never a relay. It does not change how GrapheneOS stores contacts. It decrypts Proton's encrypted vCards on the phone, then writes ordinary Contacts provider rows under the AlpenSync account so the dialer works.
 
-Contacts are written into Android's system Contacts provider, so they behave like any other native contact. Cryptography runs on the device. The app is a client, never a relay.
-
-Calendar and mail are later. Same core, still without Google.
+Calendar and mail are later. Same core, still without Google. Same idea if you searched for a GrapheneOS contacts app, a Proton contacts Android client, or a way to sync Proton Mail contacts without Play Services.
 
 ## How sync works
 
