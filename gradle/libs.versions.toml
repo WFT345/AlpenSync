@@ -25,19 +25,19 @@ androidx-security-crypto = "1.1.0-alpha06"
 # M2b: matches pcontacts' live-verified pin (docs/research/m2-contacts-notes.md
 # §2.4); protoncore uses ez-vcard for contact cards too.
 ezvcard = "0.12.2"
-# M2c: KSP + Room + Robolectric pins match pcontacts @ bf9b0c5 exactly — that
-# combination is live-verified with this repo's Kotlin pin (2.4.10).
-ksp = "2.3.10"
-androidx-room = "2.7.2"
+# M2c: KSP + Room + Robolectric. Room 2.8.4 and KSP 2.3.11 are Dependabot
+# bumps on the original pcontacts-matched pins (Kotlin 2.4.10).
+ksp = "2.3.11"
+androidx-room = "2.8.4"
 robolectric = "4.16.1"
-androidx-test-core = "1.6.1"
+androidx-test-core = "1.7.0"
 # M2d: WorkManager (the periodic requestSync poker) + the androidTest runner
 # stack — all pins match pcontacts @ bf9b0c5 (docs/research/m2-contacts-notes.md
 # Section 4.1; the WorkManager pin is their shipped, live-verified one).
 androidx-work = "2.9.1"
 androidx-test-junit = "1.2.1"
 androidx-test-runner = "1.6.2"
-androidx-test-rules = "1.6.1"
+androidx-test-rules = "1.7.0"
 
 # compileSdk/targetSdk/minSdk live in each module's build.gradle.kts:
 # compileSdk 36, targetSdk 36, minSdk 26 (pinned by the M0 brief).
