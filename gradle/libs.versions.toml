@@ -28,7 +28,7 @@ ezvcard = "0.12.2"
 # M2c: KSP + Room + Robolectric pins match pcontacts @ bf9b0c5 exactly — that
 # combination is live-verified with this repo's Kotlin pin (2.4.10).
 ksp = "2.3.10"
-androidx-room = "2.7.2"
+androidx-room = "2.8.4"
 robolectric = "4.16.1"
 androidx-test-core = "1.6.1"
 # M2d: WorkManager (the periodic requestSync poker) + the androidTest runner
