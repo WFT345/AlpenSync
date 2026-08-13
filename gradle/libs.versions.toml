@@ -27,7 +27,7 @@ androidx-security-crypto = "1.1.0-alpha06"
 ezvcard = "0.12.2"
 # M2c: KSP + Room + Robolectric pins match pcontacts @ bf9b0c5 exactly — that
 # combination is live-verified with this repo's Kotlin pin (2.4.10).
-ksp = "2.3.10"
+ksp = "2.3.11"
 androidx-room = "2.7.2"
 robolectric = "4.16.1"
 androidx-test-core = "1.6.1"
