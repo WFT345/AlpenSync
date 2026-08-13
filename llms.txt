@@ -1,0 +1,40 @@
+# AlpenSync
+
+> Two-way Proton contact sync for GrapheneOS and other de-Googled Android.
+
+AlpenSync is an independent GPL-3.0 Android client. It signs you into your own Proton Mail account, unlocks keys on the device, and syncs Proton contacts with Android's system Contacts provider so the stock dialer and Contacts app can use them. There is no Google account, no Play Services, no Firebase, and no AlpenSync server. The durable copy of the address book is Proton.
+
+It is not affiliated with, endorsed by, or supported by Proton AG or the GrapheneOS project. It uses Proton's undocumented, unofficial API, so sync may break when Proton changes the API.
+
+## What it does
+
+- Pull Proton contacts onto the phone as native Android contacts
+- Push local creates, edits, and deletes back to Proton as encrypted contacts
+- Persist an outbox if the network drops
+- Notify the user if Proton revokes the session, until they sign in again
+- Least privilege: only the AlpenSync account on the device; does not scan Phone, Google, or Samsung stores
+
+## What it does not do
+
+- Google Play distribution
+- Telemetry, analytics, or an AlpenSync backend
+- Calendar or mail (planned later, same core)
+- Two-password Proton accounts
+- Auto-merge of contacts that already lived on the phone
+
+## Facts
+
+- Package: app.alpensync
+- Min Android: 8.0 (API 26)
+- License: GPL-3.0-only
+- Cryptography: on device
+- Network: Proton hosts only
+- Target device: GrapheneOS first. LineageOS and similar de-Googled Android are in scope. Samsung OEM Contacts may not expose Save-to-AlpenSync.
+
+## Source
+
+- Repository: https://github.com/WFT345/AlpenSync
+- README: https://github.com/WFT345/AlpenSync/blob/main/README.md
+- Privacy: https://github.com/WFT345/AlpenSync/blob/main/PRIVACY.md
+- Terms: https://github.com/WFT345/AlpenSync/blob/main/TERMS.md
+- License: https://github.com/WFT345/AlpenSync/blob/main/LICENSE

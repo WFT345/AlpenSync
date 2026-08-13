@@ -44,10 +44,10 @@ LP/
 # Visual brainstorm companion
 .superpowers/
 
-# Documentation and internal notes are not published (owner decision,
-# 2026-08-12). Covers README/ARCHITECTURE/THREAT_MODEL/SECURITY, the project
-# plan, and docs/adr + docs/research. LICENSE is not .md and IS published --
-# GPL-3.0 requires it to travel with the source. In-app legal copy is a
-# build input and must travel with the source.
+# Internal notes stay local (ADRs, research, plans). The public front door
+# is README plus privacy/terms. LICENSE is not .md and ships with the source.
 *.md
+!README.md
+!PRIVACY.md
+!TERMS.md
 !app/src/main/assets/legal/*.md
