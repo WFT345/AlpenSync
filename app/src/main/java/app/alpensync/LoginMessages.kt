@@ -2,6 +2,7 @@ package app.alpensync
 
 import app.alpensync.core.api.http.EndpointFamily
 import app.alpensync.core.auth.LoginResult
+import app.alpensync.core.auth.store.DisconnectNoticeStore
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -72,6 +73,20 @@ fun mapFailureReason(reason: String): LoginErrorKind = when (reason) {
 }
 
 const val TOTP_CODE_LENGTH = 6
+
+/**
+ * Restore a relink banner after a background wipe (the store is empty, but
+ * [DisconnectNoticeStore] kept the reason). Null when the user logged out
+ * on purpose or never signed in.
+ */
+fun initialLogoutNotice(hasPersistedSession: Boolean, disconnectReason: String?): LogoutNotice? {
+    if (hasPersistedSession) return null
+    return when (disconnectReason) {
+        DisconnectNoticeStore.REASON_REVOKED -> LogoutNotice.SESSION_EXPIRED
+        DisconnectNoticeStore.REASON_INCOMPLETE -> LogoutNotice.SESSION_INCOMPLETE
+        else -> null
+    }
+}
 
 /**
  * Accepts exactly six ASCII digits (Proton TOTP), tolerating surrounding

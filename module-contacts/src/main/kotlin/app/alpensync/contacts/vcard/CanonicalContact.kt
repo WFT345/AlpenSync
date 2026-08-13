@@ -19,8 +19,9 @@ import ezvcard.VCard
  * canonical form; M3 re-serializes from [vcard] with local edits applied so
  * unmapped properties survive a phone-side edit.
  *
- * M2 persists nothing decrypted (THREAT_MODEL.md): this object lives in
- * memory for the duration of one contact's processing only.
+ * M2 persisted nothing decrypted; M3a added the Keystore-wrapped canonical
+ * store (ADR 0007 Section 5(i), THREAT_MODEL.md) so the write path and the
+ * ADR 0006 merge have a lossless base — the at-rest form is ciphertext only.
  *
  * [verified] is true iff every signature-bearing card verified; the count
  * surfaces in the sync report (ADR 0005 risk register). [protonUid] is the
@@ -35,4 +36,21 @@ data class CanonicalContact(
     val cardCount: Int,
     val unverifiedCardCount: Int,
     val malformedFragmentCount: Int,
-)
+) {
+    companion object {
+        /**
+         * Wraps an already-merged vCard for projection-only use (write path:
+         * the stored canonical baseline, an update candidate) — no card-level
+         * provenance applies, so the counts are zero and [verified] is true.
+         */
+        fun ofVCard(protonContactId: String, vcard: VCard): CanonicalContact = CanonicalContact(
+            protonContactId = protonContactId,
+            vcard = vcard,
+            protonUid = vcard.uid?.value?.takeIf { it.isNotBlank() },
+            verified = true,
+            cardCount = 0,
+            unverifiedCardCount = 0,
+            malformedFragmentCount = 0,
+        )
+    }
+}

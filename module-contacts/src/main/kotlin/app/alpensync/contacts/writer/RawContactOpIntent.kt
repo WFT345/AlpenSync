@@ -31,4 +31,12 @@ sealed interface RawContactOpIntent {
 
     /** A tombstone's grace period expired — delete the whole RawContact. */
     data class DeleteContact(val sourceId: String) : RawContactOpIntent
+
+    /**
+     * M3b: a locally-created RawContact (SOURCE_ID null) just got its server
+     * ID from a successful create push — stamp it so the next pull recognizes
+     * the row as already-synced instead of writing a duplicate (the ADR 0005
+     * Section 3 recovery path keys off SOURCE_ID).
+     */
+    data class SetSourceId(val rawContactId: Long, val sourceId: String) : RawContactOpIntent
 }

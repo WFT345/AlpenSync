@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import app.alpensync.contacts.account.DEFAULT_ACCOUNT_NAME
+import app.alpensync.contacts.store.AccountContentWiper
+import app.alpensync.contacts.sync.RelinkNotifier
 import app.alpensync.core.api.InMemorySession
 import app.alpensync.core.api.ProtonApiConfig
 import app.alpensync.core.api.ProtonApiFactory
@@ -17,6 +19,7 @@ import app.alpensync.core.api.log.SafeLog
 import app.alpensync.core.auth.LoginResult
 import app.alpensync.core.auth.SrpLoginOrchestrator
 import app.alpensync.core.auth.srp.SrpClient
+import app.alpensync.core.auth.store.DisconnectNoticeStore
 import app.alpensync.core.auth.store.EncryptedSecretStore
 import app.alpensync.core.auth.store.SecretStore
 import app.alpensync.core.keys.KeyringUnlockException
@@ -26,6 +29,7 @@ import app.alpensync.core.keys.TokenDecryptor
 import app.alpensync.core.keys.UnlockedKey
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 /**
@@ -58,10 +62,12 @@ class LoginController(context: Context) {
 
     // EncryptedSharedPreferences init touches the Keystore; doing it once at
     // activity creation keeps that predictable (ADR 0004 §3 factory contract).
+    private val appContext = context.applicationContext
     private val store: SecretStore = EncryptedSecretStore.create(
-        context.applicationContext,
+        appContext,
         ACCOUNT_ID,
     )
+    private val disconnect = DisconnectNoticeStore(appContext)
     private val session = InMemorySession()
 
     // Bridges :core:api's HV-header needs to the SecretStore (ADR 0004 Q4):
@@ -122,6 +128,9 @@ class LoginController(context: Context) {
             session.update(uid = uid, accessToken = accessToken)
             restoredSession = true
             state = LoginUiState.LoggedIn(username = null, restoredSession = true)
+        } else {
+            state = LoginUiState.LoggedOut(notice = initialLogoutNotice(false, disconnect.reason()))
+            RelinkNotifier.repostIfNeeded(appContext)
         }
     }
 
@@ -209,6 +218,7 @@ class LoginController(context: Context) {
                     null -> {
                         // Tokens without key material (e.g. a login abandoned at
                         // the 2FA step) can never unlock — wipe and start over.
+                        disconnect.markIncomplete()
                         wipeSession()
                         LoginUiState.LoggedOut(notice = LogoutNotice.SESSION_INCOMPLETE)
                     }
@@ -240,6 +250,8 @@ class LoginController(context: Context) {
         containUnexpected({ t -> state = unexpectedError(t) }) {
             withContext(Dispatchers.IO) {
                 runCatching { api.revoke() } // deliberately best-effort — the wipe is the guarantee
+                disconnect.clear()
+                RelinkNotifier.cancel(appContext)
                 wipeSession()
             }
             state = LoginUiState.LoggedOut()
@@ -249,7 +261,14 @@ class LoginController(context: Context) {
     /** Error-screen "Back" — login failures already left a wiped store. */
     fun backToLogin() {
         pendingHv.clear()
-        state = LoginUiState.LoggedOut()
+        state = LoginUiState.LoggedOut(notice = initialLogoutNotice(false, disconnect.reason()))
+    }
+
+    /** Home saw a dead session while still showing LoggedIn — go to relink. */
+    fun promptRelink() {
+        disconnect.markRevoked()
+        runBlocking { wipeSession() }
+        state = LoginUiState.LoggedOut(notice = LogoutNotice.SESSION_EXPIRED)
     }
 
     /** Error-screen "Retry" re-runs the account fetch on the live session. */
@@ -261,6 +280,8 @@ class LoginController(context: Context) {
         if (result is LoginResult.Success) {
             loggedInUsername = result.username
             restoredSession = false
+            disconnect.clear()
+            RelinkNotifier.cancel(appContext)
         }
         state = mapLoginResultToState(result)
     }
@@ -321,17 +342,20 @@ class LoginController(context: Context) {
         }
     }
 
-    private fun wipeSession() {
+    private suspend fun wipeSession() {
         store.logout()
         session.clear()
         loggedInUsername = null
         restoredSession = false
         pendingHv.clear()
+        AccountContentWiper.wipe(appContext, ACCOUNT_ID)
     }
 
     /** Fired by RefreshingAuthenticator when the server rejects the refresh. */
     private fun onSessionInvalid() {
-        wipeSession()
+        disconnect.markRevoked()
+        runBlocking { wipeSession() }
+        RelinkNotifier.notifyDisconnected(appContext)
         state = LoginUiState.LoggedOut(notice = LogoutNotice.SESSION_EXPIRED)
     }
 

@@ -34,6 +34,7 @@ object ContactsContractOps {
             is RawContactOpIntent.CreateContact -> createContactOps(account, intent.projected, baseIdx)
             is RawContactOpIntent.UpdateContact -> updateContactOps(account, intent.rawContactId, intent.projected)
             is RawContactOpIntent.DeleteContact -> listOf(deleteContactOp(account, intent.sourceId))
+            is RawContactOpIntent.SetSourceId -> listOf(setSourceIdOp(account, intent))
         }
 
     private fun createContactOps(
@@ -112,5 +113,13 @@ object ContactsContractOps {
                     " AND ${RawContacts.ACCOUNT_NAME} = ?",
                 arrayOf(sourceId, account.type, account.name),
             )
+            .build()
+
+    private fun setSourceIdOp(account: Account, intent: RawContactOpIntent.SetSourceId): ContentProviderOperation =
+        ContentProviderOperation.newUpdate(
+            SyncAdapterUri.decorate(RawContacts.CONTENT_URI, account.name, account.type),
+        )
+            .withSelection("${RawContacts._ID} = ?", arrayOf(intent.rawContactId.toString()))
+            .withValue(RawContacts.SOURCE_ID, intent.sourceId)
             .build()
 }

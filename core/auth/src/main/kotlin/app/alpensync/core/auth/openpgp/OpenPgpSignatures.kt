@@ -4,8 +4,8 @@
 // paths core/crypto/.../openpgp/BouncyCastleOpenPgpService.kt (verifyDetached /
 // signDetached only) and .../openpgp/TextCanonicalization.kt (inlined below).
 // Deviation: encrypt/decrypt are NOT ported here — :core:keys owns the M1
-// decrypt path (address-key Token), and full encrypt+sign lands at M2 with
-// the contacts writer.
+// decrypt path (address-key Token); encrypt+sign landed at M3a next door in
+// OpenPgpEncryption.kt.
 
 package app.alpensync.core.auth.openpgp
 

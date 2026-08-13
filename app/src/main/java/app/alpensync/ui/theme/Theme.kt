@@ -1,24 +1,30 @@
 package app.alpensync.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-// Minimal M3 theme for the M0 shell. Brand colors are deliberately not
-// invented yet; defaults keep the UI honest and unstyled until the
-// onboarding/settings UI is designed at M4.
-private val LightColors = lightColorScheme()
-private val DarkColors = darkColorScheme()
+private val AlpenColors = darkColorScheme(
+    primary = AlpenFg,
+    onPrimary = AlpenBg,
+    secondary = AlpenIce,
+    onSecondary = AlpenBg,
+    background = AlpenBg,
+    onBackground = AlpenFg,
+    surface = AlpenBg,
+    onSurface = AlpenFg,
+    surfaceVariant = AlpenBg2,
+    onSurfaceVariant = AlpenMute,
+    outline = AlpenRule,
+    error = AlpenError,
+    onError = AlpenBg,
+)
 
 @Composable
-fun AlpenSyncTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit,
-) {
+fun AlpenSyncTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
+        colorScheme = AlpenColors,
+        typography = AlpenTypography,
         content = content,
     )
 }

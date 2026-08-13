@@ -66,6 +66,10 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    // M3b: the write-engine tests construct ProtonServerCodeException, whose
+    // cause is a retrofit HttpException — both stay test-only.
+    testImplementation(libs.retrofit)
+    testImplementation(libs.okhttp)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.junit)

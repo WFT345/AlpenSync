@@ -5,7 +5,8 @@
   - contentAuthority must equal ContactsContract.AUTHORITY.
   - accountType must match @xml/authenticator.
   - userVisible="true": the account is togglable in Settings → Accounts → Sync.
-  - supportsUploading="false" at M2 (one-way read); M3 flips it to true.
+  - supportsUploading="true" since M3b (two-way sync, ADR 0007 Section 1):
+    local edits to our RawContacts trigger an upload sync.
   - allowParallelSyncs="false": one sync per account — interleaved writes
     against the same RawContacts rows must not happen.
   - isAlwaysSyncable="true": sync without a manual user opt-in.
@@ -14,6 +15,6 @@
     android:contentAuthority="com.android.contacts"
     android:accountType="app.alpensync.account"
     android:userVisible="true"
-    android:supportsUploading="false"
+    android:supportsUploading="true"
     android:allowParallelSyncs="false"
     android:isAlwaysSyncable="true" />

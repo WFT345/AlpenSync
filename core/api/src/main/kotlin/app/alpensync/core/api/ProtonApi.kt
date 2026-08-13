@@ -8,7 +8,11 @@ package app.alpensync.core.api
 
 import app.alpensync.core.api.dto.AuthRequest
 import app.alpensync.core.api.dto.AuthResponse
+import app.alpensync.core.api.dto.BulkDeleteRequest
+import app.alpensync.core.api.dto.BulkDeleteResponse
 import app.alpensync.core.api.dto.ContactsPageResponse
+import app.alpensync.core.api.dto.CreateContactsRequest
+import app.alpensync.core.api.dto.CreateContactsResponse
 import app.alpensync.core.api.dto.GetAddressesResponse
 import app.alpensync.core.api.dto.GetContactResponse
 import app.alpensync.core.api.dto.GetKeySaltsResponse
@@ -20,10 +24,13 @@ import app.alpensync.core.api.dto.RefreshRequest
 import app.alpensync.core.api.dto.RefreshResponse
 import app.alpensync.core.api.dto.TwoFactorRequest
 import app.alpensync.core.api.dto.TwoFactorResponse
+import app.alpensync.core.api.dto.UpdateContactRequest
+import app.alpensync.core.api.dto.UpdateContactResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -94,6 +101,36 @@ interface ProtonApi {
      */
     @GET("contacts/v4/contacts/{id}")
     suspend fun getContact(@Path("id") id: String): GetContactResponse
+
+    /**
+     * Creates contacts. We always send single-item batches (ADR 0007 Section
+     * 4), so the per-index sub-responses are one-element — HTTP 200 is never
+     * per-item success (research notes Section 2.1). POSTs are never
+     * blind-retried (M1 taxonomy); a lost response collapses by UID dedup on
+     * the next pull.
+     */
+    // UNVERIFIED: replay/duplicate-UID behavior + write validation codes —
+    // M3c live probes 2/3 (docs/research/m3-writepath-notes.md Section 8).
+    @POST("contacts/v4/contacts")
+    suspend fun createContacts(@Body request: CreateContactsRequest): CreateContactsResponse
+
+    /**
+     * Replaces the ENTIRE Cards[] array of one contact — there is no
+     * field-level PATCH (research notes Section 2.2). Naturally idempotent.
+     */
+    @PUT("contacts/v4/contacts/{id}")
+    suspend fun updateContact(
+        @Path("id") id: String,
+        @Body request: UpdateContactRequest,
+    ): UpdateContactResponse
+
+    /**
+     * Bulk delete — genuinely PUT, per-ID sub-responses, NO server Trash
+     * (final once pushed; research notes Section 2.3). We send one ID per
+     * call (ADR 0007 Section 4). Never call the old-family delete-ALL route.
+     */
+    @PUT("contacts/v4/contacts/delete")
+    suspend fun deleteContacts(@Body request: BulkDeleteRequest): BulkDeleteResponse
 
     /**
      * Labels of one kind. M2 passes [app.alpensync.core.api.dto.LabelType.CONTACT_GROUP]

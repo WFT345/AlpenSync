@@ -27,6 +27,7 @@ class PeriodicSyncWorker(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
+        RelinkNotifier.repostIfNeeded(applicationContext)
         val accounts = AccountManager.get(applicationContext).getAccountsByType(ACCOUNT_TYPE)
         if (accounts.isEmpty()) {
             // Logged out → nothing to poke. Success: the next periodic firing

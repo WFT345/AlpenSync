@@ -116,7 +116,7 @@ class SyncDebugController(private val context: Context) {
         val provider = context.contentResolver.acquireContentProviderClient(ContactsContract.AUTHORITY)
             ?: throw IOException("ContactsProvider unavailable")
         return provider.use {
-            ContactsSyncBootstrap.createEngine(context, it, defaultSyncAccount())?.run()
+            ContactsSyncBootstrap.createRunner(context, it, defaultSyncAccount())?.run()
         }
     }
 

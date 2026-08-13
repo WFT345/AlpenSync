@@ -5,8 +5,9 @@
 // (account_name, proton_contact_id) primary key — multi-account from day one
 // (plan Section 5.5); separate photo_hash column so the diff engine can
 // classify photo-only changes (M2c scope); the `deleted` flag moves out to
-// TombstoneEntity (grace-period deletes); M3-only statuses and
-// last_known_server_payload_hash stay unbuilt per ADR 0005 Section 3.
+// TombstoneEntity (grace-period deletes). M3a (DB v2) added
+// last_known_server_payload_hash per ADR 0007 Section 7 (pcontacts'
+// MIGRATION_1_2 shape).
 
 package app.alpensync.core.db.entity
 

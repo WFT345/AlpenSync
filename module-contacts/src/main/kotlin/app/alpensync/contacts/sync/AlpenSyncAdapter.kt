@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 WFT345 and AlpenSync contributors
 // Adapted from pcontacts (GPL-3.0), https://github.com/andreabenetton/pcontacts @ bf9b0c5,
-// path app/.../sync/ProtonSyncAdapter.kt. Deviations: read-only M2 pipeline
-// (no write engine); no user-facing notifier at M2d (the debug screen shows
+// path app/.../sync/ProtonSyncAdapter.kt. Deviations: detect → push → pull
+// (ADR 0007 Section 1, their ADR-0017 Section 7B ordering) instead of their
+// adapter flag split; no user-facing notifier at M3 (the debug screen shows
 // the report; M4 grows the sync-log viewer); SafeLog instead of their Logger.
 
 package app.alpensync.contacts.sync
@@ -55,7 +56,7 @@ class AlpenSyncAdapter(
         ContactsAccountSettings.ensureVisibleAndSyncable(context.contentResolver, account)
         try {
             val report = runBlocking {
-                ContactsSyncBootstrap.createEngine(context, provider, account)?.run()
+                ContactsSyncBootstrap.createRunner(context, provider, account)?.run()
             } ?: return // no session / no key material — SafeLog'd in the bootstrap
             syncResult.stats.numInserts += report.inserted.toLong()
             syncResult.stats.numUpdates += report.updated.toLong()

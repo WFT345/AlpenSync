@@ -38,9 +38,16 @@ Thumbs.db
 # OWASP dependency-check local data/cache
 dependency-check-data/
 
+# Landing page lives next to the app locally. Do not publish it.
+LP/
+
+# Visual brainstorm companion
+.superpowers/
+
 # Documentation and internal notes are not published (owner decision,
 # 2026-08-12). Covers README/ARCHITECTURE/THREAT_MODEL/SECURITY, the project
 # plan, and docs/adr + docs/research. LICENSE is not .md and IS published --
-# GPL-3.0 requires it to travel with the source. No .md is a build input, so
-# a fresh clone still compiles.
+# GPL-3.0 requires it to travel with the source. In-app legal copy is a
+# build input and must travel with the source.
 *.md
+!app/src/main/assets/legal/*.md

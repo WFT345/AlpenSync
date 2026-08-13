@@ -73,6 +73,41 @@ interface ContactMapDao {
     )
     suspend fun markError(account: String, protonContactId: String, lastError: String)
 
+    /**
+     * M3b write path (ADR 0007 Section 2): a local edit was captured into the
+     * outbox. While a contact is PENDING_PUSH the pull engine must not
+     * rewrite its provider rows from the server state — the push-side
+     * three-way merge owns the convergence, and a pull overwrite would
+     * silently destroy the queued local edit.
+     */
+    @Query(
+        "UPDATE contact_map SET sync_status = 2 WHERE account_name = :account" +
+            " AND proton_contact_id = :protonContactId",
+    )
+    suspend fun markPendingPush(account: String, protonContactId: String)
+
+    /**
+     * M3b write path: a pending push was cancelled BEFORE any server write
+     * (the edit was reverted to the baseline, or a pending delete was
+     * un-done by a re-edit) — the contact returns to the normal pull path.
+     */
+    @Query(
+        "UPDATE contact_map SET sync_status = 0 WHERE account_name = :account" +
+            " AND proton_contact_id = :protonContactId",
+    )
+    suspend fun markClean(account: String, protonContactId: String)
+
+    /**
+     * M3 write path (ADR 0007 Section 5): records the server payload hash
+     * after every successful pull/push of the contact — the divergence hint
+     * the push consults before writing.
+     */
+    @Query(
+        "UPDATE contact_map SET last_known_server_payload_hash = :hash" +
+            " WHERE account_name = :account AND proton_contact_id = :protonContactId",
+    )
+    suspend fun updateServerPayloadHash(account: String, protonContactId: String, hash: String?)
+
     @Query(
         "DELETE FROM contact_map WHERE account_name = :account AND proton_contact_id = :protonContactId",
     )

@@ -80,6 +80,26 @@ object SafeLog {
         CONTACT_CARD_SKIPPED,
         CONTACT_VCARD_FRAGMENT_MALFORMED,
         CONTACT_CARDS_UNVERIFIED,
+        // M3a write path (:module-contacts)
+        /** An IM handle without a serializable URI scheme was dropped on write. */
+        CONTACT_WRITE_IMPP_SKIPPED,
+        /** The encrypted canonical store failed to unwrap a row (key invalidated or corruption). */
+        CANONICAL_STORE_UNWRAP_FAILED,
+        // M3b two-way sync (:module-contacts)
+        /** A stored canonical vCard unwrapped but failed to parse — treated as missing, row dropped. */
+        CANONICAL_STORE_PARSE_FAILED,
+        /** detail = entries enqueued this run from the dirty scan. */
+        SYNC_OUTBOX_ENQUEUED,
+        /** A push failed retryably; detail = the new attempts count. */
+        SYNC_OUTBOX_PUSH_RETRY,
+        /** A push failed permanently; the outbox row is quarantined for user requeue. */
+        SYNC_OUTBOX_QUARANTINED,
+        /** A bulk-delete per-ID sub-response reported failure; detail = the Proton sub-Code. */
+        SYNC_OUTBOX_DELETE_SUBCODE_FAILED,
+        /** A both-sides field conflict resolved server-wins; detail = conflicting field count. */
+        SYNC_CONFLICT_SERVER_WON,
+        /** A pushed delete succeeded but the provider's DELETED=1 row could not be purged (the detector re-purges). */
+        SYNC_PROVIDER_ROW_PURGE_FAILED,
         // M2d sync runs (:module-contacts; detail on SYNC_GUARD_ABORTED = pending deletions)
         SYNC_SKIPPED_NO_SESSION,
         SYNC_GUARD_ABORTED,

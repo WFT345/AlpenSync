@@ -2,6 +2,7 @@ package app.alpensync
 
 import app.alpensync.core.api.http.EndpointFamily
 import app.alpensync.core.auth.LoginResult
+import app.alpensync.core.auth.store.DisconnectNoticeStore
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
@@ -97,5 +98,27 @@ class LoginMessagesTest {
     @Test fun solvable_hv_challenge_maps_to_the_sheet_state() {
         val state = mapLoginResultToState(LoginResult.HumanVerificationRequired("tok", listOf("captcha")))
         assertEquals(LoginUiState.HumanVerification(startToken = "tok", methods = listOf("captcha")), state)
+    }
+
+    @Test fun persisted_session_has_no_relink_banner() {
+        assertNull(initialLogoutNotice(true, DisconnectNoticeStore.REASON_REVOKED))
+    }
+
+    @Test fun revoked_flag_without_a_session_is_relink() {
+        assertEquals(
+            LogoutNotice.SESSION_EXPIRED,
+            initialLogoutNotice(false, DisconnectNoticeStore.REASON_REVOKED),
+        )
+    }
+
+    @Test fun incomplete_flag_without_a_session_is_relink() {
+        assertEquals(
+            LogoutNotice.SESSION_INCOMPLETE,
+            initialLogoutNotice(false, DisconnectNoticeStore.REASON_INCOMPLETE),
+        )
+    }
+
+    @Test fun no_flag_and_no_session_is_a_plain_login() {
+        assertNull(initialLogoutNotice(false, null))
     }
 }

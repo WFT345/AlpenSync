@@ -17,7 +17,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,6 +37,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import app.alpensync.R
+import app.alpensync.ui.theme.AlpenBg
+import app.alpensync.ui.theme.AlpenFg
+import app.alpensync.ui.theme.AlpenIce
 
 /**
  * The in-app human-verification sheet (ADR 0004 Q3): a near-fullscreen
@@ -57,35 +59,47 @@ internal fun HumanVerificationSheet(
     onSuccess: (token: String, tokenType: String) -> Unit,
     onCancel: () -> Unit,
 ) {
-    val darkTheme = isSystemInDarkTheme()
-    val url = remember(startToken, methods, darkTheme) {
-        buildHumanVerificationUrl(startToken, methods, darkTheme)
+    val url = remember(startToken, methods) {
+        buildHumanVerificationUrl(startToken, methods, darkTheme = true)
     }
     Dialog(
         onDismissRequest = onCancel,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        Surface(modifier = Modifier.fillMaxSize().padding(12.dp)) {
-            Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.hv_title),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    TextButton(onClick = onCancel) {
-                        Text(stringResource(R.string.hv_cancel))
-                    }
-                }
-                AndroidView(
-                    modifier = Modifier.fillMaxSize(),
-                    factory = { context -> createChallengeWebView(context, url, onSuccess, onCancel) },
-                    onRelease = { webView -> webView.destroy() },
-                )
-            }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AlpenBg)
+                .padding(16.dp),
+        ) {
+            HvChrome(onCancel)
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context -> createChallengeWebView(context, url, onSuccess, onCancel) },
+                onRelease = { webView -> webView.destroy() },
+            )
+        }
+    }
+}
+
+@Composable
+private fun HvChrome(onCancel: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.hv_title),
+            color = AlpenFg,
+            style = MaterialTheme.typography.titleMedium,
+        )
+        TextButton(onClick = onCancel) {
+            Text(
+                text = stringResource(R.string.hv_cancel),
+                color = AlpenIce,
+                style = MaterialTheme.typography.labelSmall,
+            )
         }
     }
 }

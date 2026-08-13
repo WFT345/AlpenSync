@@ -11,6 +11,8 @@
 
 package app.alpensync.contacts.sync
 
+import androidx.room.withTransaction
+import app.alpensync.contacts.store.CanonicalVCardStore
 import app.alpensync.contacts.vcard.CanonicalContact
 import app.alpensync.contacts.vcard.ContactDecrypter
 import app.alpensync.contacts.vcard.ProjectedContact
@@ -47,6 +49,15 @@ import java.io.IOException
  *
  * The three pipeline stages are constructor-injected so unit tests drive the
  * engine with fakes; production wiring lives in ContactsSyncBootstrap.
+ *
+ * M3b additions (ADR 0007): contacts the write path owns (PENDING_PUSH /
+ * CONFLICT status or a local-create placeholder mapping) are SKIPPED here —
+ * the push-side three-way merge owns their convergence, and a pull overwrite
+ * would silently destroy a queued local edit; every applied contact persists
+ * its canonical vCard + server payload hash (CanonicalPersistence) so the
+ * write path has a merge base; a new server contact whose UID matches a
+ * placeholder collapses into the pending create (lost-create-response dedup,
+ * ADR 0007 Section 3) instead of writing a duplicate.
  */
 class ContactsSyncEngine(
     private val accountName: String,
@@ -54,11 +65,14 @@ class ContactsSyncEngine(
     private val fetchContact: suspend (String) -> ContactDto,
     private val decrypter: ContactDecrypter,
     private val writer: ContactsWriterGateway,
-    private val db: AlpenSyncDatabase,
+    stores: ContactsSyncStore,
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
     /** Phase observability for tests and the future sync-log viewer. */
     val tracker = SyncRunTracker()
+
+    private val db = stores.db
+    private val canonicalPersistence = CanonicalPersistence(accountName, stores.db, stores.canonical)
 
     suspend fun run(): SyncReport {
         tracker.transition(SyncRunPhase.LISTING)
@@ -66,11 +80,17 @@ class ContactsSyncEngine(
         tracker.transition(SyncRunPhase.DIFFING)
         val nowMs = clock()
         val mappings = db.contactMapDao().listForAccount(accountName)
+        val writePendingIds = mappings.filter { it.isWritePending() }.mapTo(HashSet()) { it.protonContactId }
+        val syncableMappings = if (writePendingIds.isEmpty()) {
+            mappings
+        } else {
+            mappings.filter { it.protonContactId !in writePendingIds }
+        }
         val tombstones = db.tombstoneDao().listForAccount(accountName)
         val lastKnownTotal = db.syncStateDao().get(accountName)?.lastKnownTotal ?: 0
         val stats = RunStats()
-        val canonicals = fetchStage(listed, mappings, tombstones, nowMs, stats)
-        val diff = ContactDiffer.diff(canonicals, mappings, tombstones, listed.mapTo(HashSet()) { it.id })
+        val canonicals = fetchStage(listed, syncableMappings, writePendingIds, tombstones, nowMs, stats)
+        val diff = ContactDiffer.diff(canonicals, syncableMappings, tombstones, listed.mapTo(HashSet()) { it.id })
 
         tracker.transition(SyncRunPhase.GUARD_CHECK)
         val verdict = MassDeleteGuard.check(diff, lastKnownTotal)
@@ -81,7 +101,7 @@ class ContactsSyncEngine(
         }
 
         tracker.transition(SyncRunPhase.APPLYING)
-        applyDiff(diff, canonicals, listed, nowMs, stats)
+        applyDiff(diff, canonicals, listed, placeholdersByUid(mappings), nowMs, stats)
         tracker.transition(SyncRunPhase.SWEEPING)
         sweepTombstones(diff, tombstones, nowMs, stats)
         finishState(listed.size, nowMs)
@@ -104,6 +124,7 @@ class ContactsSyncEngine(
     private suspend fun fetchStage(
         listed: List<ContactMetadataDto>,
         mappings: List<ContactMapEntity>,
+        writePendingIds: Set<String>,
         tombstones: List<TombstoneEntity>,
         nowMs: Long,
         stats: RunStats,
@@ -112,8 +133,12 @@ class ContactsSyncEngine(
         val tombstonedIds = tombstones.mapTo(HashSet()) { it.protonContactId }
         val canonicals = ArrayList<CanonicalContact>(listed.size)
         for (meta in listed) {
+            // The push side owns a write-pending contact's convergence: the
+            // three-way merge fetches the server state itself, and a pull
+            // overwrite here would destroy the queued local edit.
+            if (meta.id in writePendingIds) continue
             val mapping = mappingsById[meta.id]
-            if (mapping != null && meta.modifyTime <= mapping.modifyTime && meta.id !in tombstonedIds) {
+            if (mapping != null && isSkippable(meta, mapping, tombstonedIds)) {
                 db.contactMapDao().refreshBookkeeping(accountName, meta.id, mapping.modifyTime, nowMs)
                 stats.unchanged++
                 continue
@@ -123,6 +148,10 @@ class ContactsSyncEngine(
         }
         return canonicals
     }
+
+    /** Two-tier skip: server ModifyTime didn't advance past the stored one; a tombstoned contact never skips. */
+    private fun isSkippable(meta: ContactMetadataDto, mapping: ContactMapEntity, tombstonedIds: Set<String>): Boolean =
+        meta.modifyTime <= mapping.modifyTime && meta.id !in tombstonedIds
 
     /** Null return = the contact failed loudly and was counted; never a silent drop. */
     private suspend fun fetchOne(protonContactId: String, stats: RunStats): CanonicalContact? {
@@ -160,20 +189,34 @@ class ContactsSyncEngine(
         diff: ContactDiff,
         canonicals: List<CanonicalContact>,
         listed: List<ContactMetadataDto>,
+        placeholdersByUid: Map<String, ContactMapEntity>,
         nowMs: Long,
         stats: RunStats,
     ) {
         val preexisting = writer.readExistingRawIds()
+        val collapsed = HashMap<String, ContactMapEntity>()
         val intents = ArrayList<RawContactOpIntent>(diff.newContacts.size + diff.changedContacts.size)
         for (new in diff.newContacts) {
-            // Recovery path (ADR 0005 Section 3): the provider row already
-            // exists (Room wipe / crash between apply and reconcile) — update
-            // it instead of writing a duplicate.
-            val recoveredId = preexisting[new.projected.protonContactId]
-            intents += if (recoveredId != null) {
-                RawContactOpIntent.UpdateContact(recoveredId, new.projected)
-            } else {
-                RawContactOpIntent.CreateContact(new.projected)
+            val placeholder = new.projected.protonUid?.let(placeholdersByUid::get)
+            when {
+                // Lost-create-response collapse (ADR 0007 Section 3): the
+                // server contact carries our client-generated UID — stamp the
+                // existing provider row instead of writing a duplicate.
+                placeholder != null -> {
+                    collapsed[new.projected.protonContactId] = placeholder
+                    intents += RawContactOpIntent.SetSourceId(
+                        placeholder.androidRawContactId,
+                        new.projected.protonContactId,
+                    )
+                }
+                // Recovery path (ADR 0005 Section 3): the provider row already
+                // exists (Room wipe / crash between apply and reconcile) — update
+                // it instead of writing a duplicate.
+                preexisting[new.projected.protonContactId] != null -> {
+                    val recoveredId = preexisting.getValue(new.projected.protonContactId)
+                    intents += RawContactOpIntent.UpdateContact(recoveredId, new.projected)
+                }
+                else -> intents += RawContactOpIntent.CreateContact(new.projected)
             }
         }
         for (changed in diff.changedContacts) {
@@ -187,7 +230,19 @@ class ContactsSyncEngine(
             }
         }
         if (intents.isNotEmpty()) writer.apply(intents)
-        reconcileMappings(diff, canonicals, listed, nowMs, stats)
+        reconcileMappings(diff, canonicals, listed, collapsed, nowMs, stats)
+    }
+
+    /** UID → placeholder mapping, for the lost-create-response collapse in [applyDiff]. */
+    private fun placeholdersByUid(mappings: List<ContactMapEntity>): Map<String, ContactMapEntity> {
+        val out = HashMap<String, ContactMapEntity>()
+        for (mapping in mappings) {
+            val uid = mapping.protonUid
+            if (uid != null && LocalChangeDetector.isLocalPlaceholder(mapping.protonContactId)) {
+                out[uid] = mapping
+            }
+        }
+        return out
     }
 
     /** Room reconcile with post-apply provider IDs (research notes §4.2 step 7). */
@@ -195,41 +250,58 @@ class ContactsSyncEngine(
         diff: ContactDiff,
         canonicals: List<CanonicalContact>,
         listed: List<ContactMetadataDto>,
+        collapsed: Map<String, ContactMapEntity>,
         nowMs: Long,
         stats: RunStats,
     ) {
-        val postApply = writer.readExistingRawIds()
-        val verifiedById = canonicals.associate { it.protonContactId to it.verified }
-        val modifyTimeById = listed.associate { it.id to it.modifyTime }
+        val context = ReconcileContext(
+            postApply = writer.readExistingRawIds(),
+            canonicalsById = canonicals.associateBy { it.protonContactId },
+            verifiedById = canonicals.associate { it.protonContactId to it.verified },
+            modifyTimeById = listed.associate { it.id to it.modifyTime },
+        )
         for (new in diff.newContacts) {
-            val rawId = postApply[new.projected.protonContactId]
-            if (rawId == null) {
-                markContactError(new.projected.protonContactId, "provider_write_missing", stats)
-                continue
-            }
-            upsertMapping(new.projected, rawId, new.contentHash, new.photoHash, verifiedById, modifyTimeById, nowMs)
-            stats.inserted++
+            reconcileNew(new, collapsed, context, nowMs, stats)
         }
         for (changed in diff.changedContacts) {
             // The provider map is authoritative: it covers both the plain
             // update path and the vanished-row recreate fallback above.
-            val rawId = postApply[changed.projected.protonContactId] ?: changed.mapping.androidRawContactId
-            upsertMapping(
-                changed.projected,
-                rawId,
-                changed.contentHash,
-                changed.photoHash,
-                verifiedById,
-                modifyTimeById,
-                nowMs,
-            )
+            val rawId = context.postApply[changed.projected.protonContactId] ?: changed.mapping.androidRawContactId
+            upsertMapping(changed.projected, rawId, changed.contentHash, changed.photoHash, context, nowMs)
+            context.canonicalsById[changed.projected.protonContactId]?.let { canonicalPersistence.onApplied(it) }
             stats.updated++
         }
         for (unchanged in diff.unchangedContacts) {
             val id = unchanged.mapping.protonContactId
-            db.contactMapDao().refreshBookkeeping(accountName, id, modifyTimeById[id] ?: 0L, nowMs)
+            db.contactMapDao().refreshBookkeeping(accountName, id, context.modifyTimeById[id] ?: 0L, nowMs)
+            canonicalPersistence.backfillIfMissing(unchanged.mapping, context.canonicalsById[id])
             stats.unchanged++
         }
+    }
+
+    private suspend fun reconcileNew(
+        new: NewContact,
+        collapsed: Map<String, ContactMapEntity>,
+        context: ReconcileContext,
+        nowMs: Long,
+        stats: RunStats,
+    ) {
+        val rawId = context.postApply[new.projected.protonContactId]
+        if (rawId == null) {
+            markContactError(new.projected.protonContactId, "provider_write_missing", stats)
+            return
+        }
+        collapsed[new.projected.protonContactId]?.let { placeholder ->
+            // The collapse completes the create the response lost: the
+            // placeholder mapping and its outbox rows are spent.
+            db.withTransaction {
+                db.contactMapDao().deleteByProtonId(accountName, placeholder.protonContactId)
+                db.outboxDao().deleteByContact(accountName, placeholder.protonContactId)
+            }
+        }
+        upsertMapping(new.projected, rawId, new.contentHash, new.photoHash, context, nowMs)
+        context.canonicalsById[new.projected.protonContactId]?.let { canonicalPersistence.onApplied(it) }
+        stats.inserted++
     }
 
     private suspend fun upsertMapping(
@@ -237,8 +309,7 @@ class ContactsSyncEngine(
         rawContactId: Long,
         contentHash: String,
         photoHash: String?,
-        verifiedById: Map<String, Boolean>,
-        modifyTimeById: Map<String, Long>,
+        context: ReconcileContext,
         nowMs: Long,
     ) {
         val id = projected.protonContactId
@@ -248,16 +319,24 @@ class ContactsSyncEngine(
                 protonContactId = id,
                 protonUid = projected.protonUid,
                 androidRawContactId = rawContactId,
-                modifyTime = modifyTimeById[id] ?: 0L,
+                modifyTime = context.modifyTimeById[id] ?: 0L,
                 contentHash = contentHash,
                 photoHash = photoHash,
-                isVerified = verifiedById[id] ?: false,
+                isVerified = context.verifiedById[id] ?: false,
                 syncStatus = ContactMapEntity.Status.CLEAN,
                 lastError = null,
                 lastSyncedAt = nowMs,
             ),
         )
     }
+
+    /** The per-run lookup maps the reconcile loops share. */
+    private data class ReconcileContext(
+        val postApply: Map<String, Long>,
+        val canonicalsById: Map<String, CanonicalContact>,
+        val verifiedById: Map<String, Boolean>,
+        val modifyTimeById: Map<String, Long>,
+    )
 
     private suspend fun sweepTombstones(
         diff: ContactDiff,
@@ -272,7 +351,10 @@ class ContactsSyncEngine(
             .filter { it.protonContactId !in restoredIds }
         if (expired.isNotEmpty()) {
             writer.apply(expired.map { RawContactOpIntent.DeleteContact(it.protonContactId) })
-            expired.forEach { db.contactMapDao().deleteByProtonId(accountName, it.protonContactId) }
+            expired.forEach {
+                db.contactMapDao().deleteByProtonId(accountName, it.protonContactId)
+                canonicalPersistence.onRemoved(it.protonContactId)
+            }
             db.tombstoneDao().deleteExpired(accountName, nowMs)
             stats.swept = expired.size
         }
@@ -324,3 +406,14 @@ class ContactsSyncEngine(
         var unverifiedContacts = 0
     }
 }
+
+/**
+ * Write-path-owned rows (ADR 0007 Sections 2/5): a queued local edit
+ * (PENDING_PUSH), a recorded conflict (CONFLICT), or a local-create
+ * placeholder — the pull engine must not rewrite these from server state;
+ * the push-side merge owns their convergence.
+ */
+private fun ContactMapEntity.isWritePending(): Boolean =
+    syncStatus == ContactMapEntity.Status.PENDING_PUSH ||
+        syncStatus == ContactMapEntity.Status.CONFLICT ||
+        LocalChangeDetector.isLocalPlaceholder(protonContactId)

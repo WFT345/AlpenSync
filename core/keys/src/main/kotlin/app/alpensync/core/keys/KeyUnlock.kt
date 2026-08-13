@@ -27,7 +27,17 @@ data class UnlockedKey(
     val primary: PgpPrivateKeyHandle,
     val public: PgpPublicKeyHandle,
     val allPrivateKeys: List<PgpPrivateKeyHandle> = listOf(primary),
-)
+) {
+    /**
+     * Public halves of every encryption-capable key in the ring (pcontacts'
+     * `encryptionPublicKeys`, computed from the unlocked ring): the M3 write
+     * path's self-encryption targets. Real Proton rings encrypt to the
+     * subkey, not the sign/certify primary — callers must use this, never
+     * [public] alone, as the encryption recipient set.
+     */
+    val encryptionPublicKeys: List<PgpPublicKeyHandle>
+        get() = allPrivateKeys.map { PgpPublicKeyHandle(it.pubKey) }.filter { it.raw.isEncryptionKey }
+}
 
 class KeyUnlockException(message: String, cause: Throwable? = null) : Exception(message, cause)
 

@@ -1,14 +1,5 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="48dp"
-    android:height="48dp"
-    android:viewportWidth="48"
-    android:viewportHeight="48">
-    <!-- Simple mountain glyph placeholder for the M0 scaffold; a real launcher
-         icon (adaptive icon set) is designed before the M4 release. -->
-    <path
-        android:fillColor="#3D6B8E"
-        android:pathData="M4,40 L18,14 L26,28 L31,20 L44,40 Z" />
-    <path
-        android:fillColor="#9DC3E0"
-        android:pathData="M18,14 L22.5,22 L18,26 L13.5,22 Z" />
-</vector>
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_launcher_background" />
+    <item android:drawable="@drawable/ic_launcher_foreground" />
+</layer-list>

@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: 2026 WFT345 and AlpenSync contributors
 // Adapted from pcontacts (GPL-3.0), https://github.com/andreabenetton/pcontacts @ bf9b0c5,
 // path core/proton-api/src/main/kotlin/io/pcontacts/core/proton/api/contacts/ContactsDtos.kt
-// Deviation: M2 read path only — the write-path DTOs (create/update/delete) land at M3.
+// Deviation: this file carries the M2 read path only; the write-path DTOs
+// (create/update/delete) live in ContactsWriteDtos.kt (M3a).
 // The `contacts/v4/contacts/emails` endpoint is skipped entirely at M2
 // (docs/research/m2-contacts-notes.md Section 1.4).
 

@@ -2,4 +2,8 @@
 <resources>
     <!-- Shown in Settings → Accounts and Contacts apps' account picker. -->
     <string name="account_label">AlpenSync</string>
+    <string name="relink_channel_name">Proton connection</string>
+    <string name="relink_channel_desc">Tells you when Proton ends this session so you can relink.</string>
+    <string name="relink_notification_title">Relink Proton</string>
+    <string name="relink_notification_body">Proton ended this connection. Open AlpenSync to sign in again.</string>
 </resources>

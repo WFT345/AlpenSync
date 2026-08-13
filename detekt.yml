@@ -24,6 +24,10 @@ complexity:
     active: true
     thresholdInFiles: 30
     thresholdInClasses: 30
+    # An `object` is a singleton class; plan Rule 16 draws no distinction, so
+    # neither should this. Left unset it silently falls back to detekt's
+    # default of 11, which is not the limit this project chose.
+    thresholdInObjects: 30
     thresholdInInterfaces: 15
   LongParameterList:
     active: true
