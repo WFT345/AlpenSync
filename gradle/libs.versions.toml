@@ -11,11 +11,11 @@
 agp = "8.11.2"
 kotlin = "2.4.10"
 compose-bom = "2025.05.01"
-activity-compose = "1.10.1"
+activity-compose = "1.13.0"
 lifecycle-runtime-compose = "2.9.1"
 junit = "4.13.2"
 detekt = "1.23.8"
-dependencycheck = "12.1.0"
+dependencycheck = "13.0.0"
 kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
 okhttp = "5.4.0"
@@ -32,11 +32,11 @@ androidx-room = "2.8.4"
 robolectric = "4.16.1"
 androidx-test-core = "1.7.0"
 # M2d: WorkManager (the periodic requestSync poker) + the androidTest runner
-# stack — all pins match pcontacts @ bf9b0c5 (docs/research/m2-contacts-notes.md
-# Section 4.1; the WorkManager pin is their shipped, live-verified one).
+# stack. WorkManager still matches pcontacts @ bf9b0c5. Runner/junit are
+# Dependabot bumps (test APK only).
 androidx-work = "2.9.1"
-androidx-test-junit = "1.2.1"
-androidx-test-runner = "1.6.2"
+androidx-test-junit = "1.3.0"
+androidx-test-runner = "1.7.0"
 androidx-test-rules = "1.7.0"
 
 # compileSdk/targetSdk/minSdk live in each module's build.gradle.kts:

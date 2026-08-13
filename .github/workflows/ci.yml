@@ -28,10 +28,13 @@ jobs:
         uses: android-actions/setup-android@v4
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v6
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          # MIT path. Default v6 caching is a closed-source Gradle ToU component.
+          cache-provider: basic
 
       - name: Build, test, lint, detekt
         run: ./gradlew assembleDebug assembleRelease testDebugUnitTest lintDebug detekt
@@ -73,7 +76,9 @@ jobs:
         uses: android-actions/setup-android@v4
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
 
       - name: Run dependency-check
         env:
