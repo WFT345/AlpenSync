@@ -5,7 +5,7 @@
     - INTERNET: the Proton API client (:core:api) cannot function without it.
     - READ_CONTACTS / WRITE_CONTACTS (M2d): the SyncAdapter writes RawContacts
       under our own account type and reads back only what it wrote; granted
-      at runtime with an honest rationale on the debug screen.
+      at runtime with an honest rationale on the home screen.
     - GET_ACCOUNTS / AUTHENTICATE_ACCOUNTS / MANAGE_ACCOUNTS: account
       creation + lookup for our own account type (same-uid authenticator
       needs none of them on API 26+, but older calls check them; declared

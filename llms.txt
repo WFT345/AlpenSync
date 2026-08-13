@@ -39,3 +39,4 @@ It is not affiliated with, endorsed by, or supported by Proton AG or the Graphen
 - Privacy: https://github.com/WFT345/AlpenSync/blob/main/PRIVACY.md
 - Terms: https://github.com/WFT345/AlpenSync/blob/main/TERMS.md
 - License: https://github.com/WFT345/AlpenSync/blob/main/LICENSE
+- Security: https://github.com/WFT345/AlpenSync/blob/main/SECURITY.md

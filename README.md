@@ -30,7 +30,8 @@
   <a href="#build">Build</a> ·
   <a href="PRIVACY.md">Privacy</a> ·
   <a href="TERMS.md">Terms</a> ·
-  <a href="LICENSE">License</a>
+  <a href="LICENSE">License</a> ·
+  <a href="SECURITY.md">Security</a>
 </p>
 
 <p align="center">
@@ -110,6 +111,7 @@ The debug APK is a sideload. Review [privacy](PRIVACY.md) and [terms](TERMS.md) 
 - [Privacy policy](PRIVACY.md). No telemetry. No AlpenSync account. Traffic only to Proton.
 - [Terms of use](TERMS.md). GPL-3.0 wins if a term conflicts with the license.
 - [llms.txt](llms.txt). Short machine-readable summary for crawlers and assistants.
+- [Security](SECURITY.md). Report vulnerabilities privately. Do not open a public issue.
 
 ## License
 
