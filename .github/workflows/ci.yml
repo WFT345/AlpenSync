@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # full history: secrets must not hide in old commits
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
 
   dependency-scan:
     name: Dependency vulnerability scan (OWASP dependency-check)
