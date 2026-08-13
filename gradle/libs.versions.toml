@@ -23,7 +23,10 @@ kotlinx-serialization = "1.11.0"
 okhttp = "5.4.0"
 retrofit = "3.0.0"
 bouncycastle = "1.85"
-androidx-security-crypto = "1.1.0-alpha06"
+# 1.1.0 is the last Jetpack release of EncryptedSharedPreferences (deprecated
+# in 1.1.0-alpha07). Stay on the official artifact; do not rewrite the store
+# in this bump.
+androidx-security-crypto = "1.1.0"
 # M2b: matches pcontacts' live-verified pin (docs/research/m2-contacts-notes.md
 # §2.4); protoncore uses ez-vcard for contact cards too.
 ezvcard = "0.12.2"
