@@ -11,7 +11,7 @@
 agp = "8.11.2"
 kotlin = "2.4.10"
 compose-bom = "2025.05.01"
-activity-compose = "1.10.1"
+activity-compose = "1.13.0"
 lifecycle-runtime-compose = "2.9.1"
 junit = "4.13.2"
 detekt = "1.23.8"
