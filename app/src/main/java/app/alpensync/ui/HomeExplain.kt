@@ -73,6 +73,7 @@ internal fun HowItWorksToggle() {
 private fun nextStep(status: HomeStatus): String? = when (status.headline) {
     HomeHeadline.NEEDS_ACCESS -> stringResource(R.string.home_next_grant)
     HomeHeadline.READY -> stringResource(R.string.home_next_pull)
+    HomeHeadline.SYNCING -> stringResource(R.string.home_next_syncing)
     HomeHeadline.NEEDS_RELINK -> stringResource(R.string.relink_lede)
     HomeHeadline.CANT_START -> stringResource(R.string.home_cant_start_lockup)
     else -> null

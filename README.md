@@ -19,6 +19,7 @@
 <p align="center">
   <a href="https://alpensync.org"><img src="https://img.shields.io/badge/site-alpensync.org-9bb4c4?style=flat-square&labelColor=07090c" alt="alpensync.org"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-9bb4c4?style=flat-square&labelColor=07090c" alt="GPL-3.0"></a>
+  <a href="#status"><img src="https://img.shields.io/badge/contacts-ready-9bb4c4?style=flat-square&labelColor=07090c" alt="Contacts ready"></a>
   <a href="#status"><img src="https://img.shields.io/badge/status-in%20development-9bb4c4?style=flat-square&labelColor=07090c" alt="In development"></a>
   <a href="#status"><img src="https://img.shields.io/badge/android-8%2B-9bb4c4?style=flat-square&labelColor=07090c" alt="Android 8+"></a>
   <a href="#status"><img src="https://img.shields.io/badge/play%20services-none-9bb4c4?style=flat-square&labelColor=07090c" alt="No Play Services"></a>
@@ -83,7 +84,9 @@ Two-password Proton accounts (a separate mailbox password) are not supported yet
 
 ## Status
 
-In development. Two-way contact sync works: pull, push of edits, create, and delete, plus a persistent outbox if the network drops. There is no Play Store build and no F-Droid listing yet. Install from source.
+Contacts sync is ready to use on GrapheneOS. Two-way pull, push of edits, create, and delete, plus a persistent outbox. A first pull has been verified on a Pixel running GrapheneOS.
+
+The project is still in development. The Proton API is unofficial and can change. There is no Play Store or F-Droid build yet. Calendar and mail come later. Install from source.
 
 | | |
 | --- | --- |

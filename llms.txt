@@ -34,6 +34,7 @@ It is not affiliated with, endorsed by, or supported by Proton AG or the Graphen
 - Cryptography: on device
 - Network: Proton hosts only
 - Target device: GrapheneOS first. LineageOS and similar de-Googled Android are in scope. Samsung OEM Contacts may not expose Save-to-AlpenSync.
+- Status: contacts sync is ready to use on GrapheneOS (verified). Still in development: unofficial Proton API, no store listing, calendar and mail later.
 
 ## Source
 

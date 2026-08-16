@@ -72,6 +72,8 @@
     <string name="home_cant_start">Can\'t start</string>
     <string name="home_cant_start_lockup">The sync account could not be created</string>
     <string name="home_syncing">Syncing</string>
+    <string name="home_syncing_body">Pulling contacts from Proton. The first sync can take several minutes on a large book.</string>
+    <string name="home_next_syncing">Stay on this screen. The first pull is still running.</string>
     <string name="home_couldnt_sync">Couldn\'t sync</string>
     <string name="home_held_back">Held back</string>
     <string name="home_held_back_lockup">A large delete was stopped. Nothing on the phone changed.</string>

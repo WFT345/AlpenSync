@@ -5,6 +5,8 @@ import android.accounts.AccountManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Handler
+import android.os.Looper
 import android.provider.ContactsContract
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,8 +54,14 @@ class SyncDebugController(private val context: Context) {
     var syncAccountReady by mutableStateOf(false); private set
     var periodMinutes by mutableStateOf(SyncScheduler.storedPeriodMinutes(context)); private set
     var syncing by mutableStateOf(false); private set
+    var adapterSyncing by mutableStateOf(false); private set
     var lastReport: SyncReport? by mutableStateOf(null); private set
     var lastError: SyncErrorKind? by mutableStateOf(null); private set
+
+    val inFlight: Boolean get() = syncing || adapterSyncing
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var syncWatchHandle: Any? = null
 
     fun refreshPermissionState() {
         contactsPermissionGranted = CONTACTS_PERMISSIONS.all {
@@ -78,6 +86,29 @@ class SyncDebugController(private val context: Context) {
         ContentResolver.setSyncAutomatically(account, CONTACTS_AUTHORITY, true)
         ContactsAccountSettings.ensureVisibleAndSyncable(context.contentResolver, account)
         SyncScheduler.schedulePeriodic(context)
+        refreshAdapterSyncing()
+    }
+
+    /** Watch the system SyncAdapter as well as the in-app Sync now path. */
+    fun startWatchingSync() {
+        if (syncWatchHandle != null) return
+        refreshAdapterSyncing()
+        syncWatchHandle = ContentResolver.addStatusChangeListener(
+            ContentResolver.SYNC_OBSERVER_TYPE_ACTIVE,
+        ) {
+            refreshAdapterSyncing()
+        }
+    }
+
+    fun stopWatchingSync() {
+        syncWatchHandle?.let { ContentResolver.removeStatusChangeListener(it) }
+        syncWatchHandle = null
+    }
+
+    private fun refreshAdapterSyncing() {
+        val accounts = AccountManager.get(context).getAccountsByType(ACCOUNT_TYPE)
+        val active = accounts.any { ContentResolver.isSyncActive(it, CONTACTS_AUTHORITY) }
+        mainHandler.post { adapterSyncing = active }
     }
 
     fun selectPeriod(minutes: Long) {

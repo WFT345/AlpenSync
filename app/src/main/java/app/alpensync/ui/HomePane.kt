@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -25,6 +27,8 @@ import app.alpensync.R
 import app.alpensync.SyncDebugController
 import app.alpensync.contacts.sync.SyncScheduler
 import app.alpensync.ui.theme.AlpenBg
+import app.alpensync.ui.theme.AlpenIce
+import app.alpensync.ui.theme.AlpenRule
 import kotlinx.coroutines.launch
 
 @Composable
@@ -64,6 +68,10 @@ private fun HomeReady(
     LaunchedEffect(Unit) {
         syncController.refreshPermissionState()
         syncController.ensureAccountAndSchedule()
+    }
+    DisposableEffect(Unit) {
+        syncController.startWatchingSync()
+        onDispose { syncController.stopWatchingSync() }
     }
     val status = homeStatusOf(syncController)
     Column(modifier = Modifier.fillMaxSize()) {
@@ -111,8 +119,22 @@ private fun PhoneCard(
             if (!accountLabel.isNullOrBlank()) AlpenRuleLine()
             AlpenQuietRow(stringResource(R.string.home_last_run_label), runLockupText(it))
         }
-        if (syncController.contactsPermissionGranted && syncController.syncAccountReady) {
+        if (status.headline == HomeHeadline.SYNCING) {
             if (!accountLabel.isNullOrBlank() || status.run != null) AlpenRuleLine()
+            AlpenLockup(stringResource(R.string.home_syncing))
+            AlpenVSpace(10)
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = AlpenIce,
+                trackColor = AlpenRule,
+            )
+            AlpenVSpace(8)
+            AlpenBody(stringResource(R.string.home_syncing_body), mute = true)
+        }
+        if (syncController.contactsPermissionGranted && syncController.syncAccountReady) {
+            if (!accountLabel.isNullOrBlank() || status.run != null || status.headline == HomeHeadline.SYNCING) {
+                AlpenRuleLine()
+            }
             AlpenLockup(stringResource(R.string.sync_interval_label))
             IntervalRow(syncController)
         }
@@ -169,8 +191,8 @@ private fun HomePrimary(
         )
         else -> AlpenPrimaryButton(
             label = stringResource(R.string.sync_now_button),
-            enabled = !controller.syncing,
-            busy = controller.syncing,
+            enabled = !controller.inFlight,
+            busy = controller.inFlight,
             onClick = { scope.launch { controller.syncNow() } },
         )
     }
@@ -236,7 +258,7 @@ private fun intervalLabel(minutes: Long): String =
 private fun homeStatusOf(controller: SyncDebugController): HomeStatus = deriveHomeStatus(
     permissionGranted = controller.contactsPermissionGranted,
     accountReady = controller.syncAccountReady,
-    syncing = controller.syncing,
+    syncing = controller.inFlight,
     lastError = controller.lastError,
     lastReport = controller.lastReport,
 )
