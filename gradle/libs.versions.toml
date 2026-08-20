@@ -12,7 +12,7 @@
 # AGP 9.3.1 pairs with Gradle 9.7.0. AGP 8.x cannot run on Gradle 9.6+.
 agp = "9.3.1"
 kotlin = "2.4.10"
-compose-bom = "2025.05.01"
+compose-bom = "2026.08.00"
 activity-compose = "1.13.0"
 lifecycle-runtime-compose = "2.9.1"
 junit = "4.13.2"
