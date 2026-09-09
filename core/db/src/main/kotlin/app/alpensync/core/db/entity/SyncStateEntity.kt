@@ -13,12 +13,12 @@ import androidx.room.PrimaryKey
 
 /**
  * Per-account high-water marks for sync. [accountName] is the AccountManager
- * account name. [lastKnownTotal] feeds the mass-delete guard: if a sync run
- * would delete more than 50% of it (floor 10), the run aborts before any
- * delete — an API fault must not wipe the phone (ADR 0005 Section 1; the
- * guard pcontacts documents but never wires).
- * [lastEventId] is the M3 event-stream cursor; written by the M2d/M3 engine,
- * never read at M2c.
+ * account name. [lastKnownTotal] records the size of the last completed
+ * listing (debug surface only — the mass-delete guard compares pending
+ * deletions against the live mapping + tombstone counts snapshotted at run
+ * start, which a killed first pull keeps accurate by construction; ADR 0005
+ * §1 amendment). [lastEventId] is the M3 event-stream cursor; written by the
+ * M2d/M3 engine, never read at M2c.
  */
 @Entity(tableName = "sync_state")
 data class SyncStateEntity(

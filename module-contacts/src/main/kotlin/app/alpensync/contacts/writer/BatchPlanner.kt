@@ -27,11 +27,12 @@ object BatchPlanner {
         account: Account,
         intents: List<RawContactOpIntent>,
         maxOpsPerBatch: Int = MAX_OPS_PER_BATCH,
-    ): List<List<ContentProviderOperation>> {
+    ): List<PlannedChunk> {
         require(maxOpsPerBatch > 0) { "maxOpsPerBatch must be positive" }
 
-        val chunks = ArrayList<List<ContentProviderOperation>>()
+        val chunks = ArrayList<PlannedChunk>()
         var current = ArrayList<ContentProviderOperation>()
+        var creates = ArrayList<CreateSlot>()
 
         for (intent in intents) {
             var built = ContactsContractOps.build(account, intent, baseIdx = current.size)
@@ -39,15 +40,31 @@ object BatchPlanner {
                 "Single intent produced ${built.size} ops; exceeds maxOpsPerBatch=$maxOpsPerBatch"
             }
             if (current.size + built.size > maxOpsPerBatch && current.isNotEmpty()) {
-                chunks += current
+                chunks += PlannedChunk(current, creates)
                 current = ArrayList(maxOpsPerBatch)
+                creates = ArrayList()
                 // Re-anchor back-refs for the new chunk (cheap to redo always).
                 built = ContactsContractOps.build(account, intent, baseIdx = 0)
+            }
+            // A create's RawContacts insert is always its first op — record
+            // where it lands so the applier can read the assigned _ID back
+            // from the applyBatch results instead of re-querying the provider.
+            if (intent is RawContactOpIntent.CreateContact) {
+                creates += CreateSlot(current.size, intent.projected.protonContactId)
             }
             current.addAll(built)
         }
 
-        if (current.isNotEmpty()) chunks += current
+        if (current.isNotEmpty()) chunks += PlannedChunk(current, creates)
         return chunks
     }
 }
+
+/** One applyBatch-ready chunk plus where each CreateContact's RawContacts insert landed in it. */
+data class PlannedChunk(
+    val ops: List<ContentProviderOperation>,
+    val creates: List<CreateSlot>,
+)
+
+/** [opIndex] (chunk-relative) of the RawContacts insert that creates [sourceId]'s row. */
+data class CreateSlot(val opIndex: Int, val sourceId: String)

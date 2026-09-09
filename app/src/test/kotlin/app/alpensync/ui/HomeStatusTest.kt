@@ -2,6 +2,7 @@ package app.alpensync.ui
 
 import app.alpensync.SyncErrorKind
 import app.alpensync.contacts.sync.GuardAbort
+import app.alpensync.contacts.sync.SyncProgress
 import app.alpensync.contacts.sync.SyncReport
 import app.alpensync.contacts.sync.SyncRunPhase
 import org.junit.Assert.assertEquals
@@ -48,6 +49,40 @@ class HomeStatusTest {
     }
 
     @Test
+    fun in_flight_run_carries_live_progress() {
+        val progress = SyncProgress(listed = 907, processed = 312, applied = 312, inFlight = true)
+        val status = deriveHomeStatus(
+            permissionGranted = true,
+            accountReady = true,
+            syncing = true,
+            lastError = null,
+            lastReport = null,
+            progress = progress,
+        )
+        assertEquals(HomeHeadline.SYNCING, status.headline)
+        assertEquals(progress, status.progress)
+        assertEquals(312f / 907f, status.progress?.fraction)
+    }
+
+    @Test
+    fun a_finished_runs_lingering_snapshot_is_not_shown_as_live_progress() {
+        // SyncProgressHub keeps the last run's final snapshot; at the start of
+        // the next run (before the engine publishes its reset) the UI must not
+        // flash that stale "900 of 900" as if it were the new run's progress.
+        val stale = SyncProgress(listed = 900, processed = 900, applied = 900, inFlight = false)
+        val status = deriveHomeStatus(
+            permissionGranted = true,
+            accountReady = true,
+            syncing = true,
+            lastError = null,
+            lastReport = null,
+            progress = stale,
+        )
+        assertEquals(HomeHeadline.SYNCING, status.headline)
+        assertNull("stale final snapshot renders as indeterminate progress", status.progress)
+    }
+
+    @Test
     fun last_error_is_couldnt_sync() {
         val status = deriveHomeStatus(
             permissionGranted = true,
@@ -79,7 +114,7 @@ class HomeStatusTest {
             accountReady = true,
             syncing = false,
             lastError = null,
-            lastReport = report(guardAbort = GuardAbort(pendingDeletions = 40, lastKnownTotal = 50)),
+            lastReport = report(guardAbort = GuardAbort(pendingDeletions = 40, deletableTotal = 50)),
         )
         assertEquals(HomeHeadline.HELD_BACK, status.headline)
     }

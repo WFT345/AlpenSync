@@ -1,6 +1,7 @@
 package app.alpensync.ui
 
 import app.alpensync.SyncErrorKind
+import app.alpensync.contacts.sync.SyncProgress
 import app.alpensync.contacts.sync.SyncReport
 
 enum class HomeHeadline {
@@ -27,6 +28,7 @@ enum class StatusTone { NONE, OK, BUSY, ATTENTION, PROBLEM }
 data class HomeStatus(
     val headline: HomeHeadline,
     val run: HomeRunSummary? = null,
+    val progress: SyncProgress? = null,
 ) {
     val tone: StatusTone
         get() = when (headline) {
@@ -48,10 +50,14 @@ fun deriveHomeStatus(
     syncing: Boolean,
     lastError: SyncErrorKind?,
     lastReport: SyncReport?,
+    progress: SyncProgress? = null,
 ): HomeStatus {
     if (!permissionGranted) return HomeStatus(HomeHeadline.NEEDS_ACCESS)
     if (!accountReady) return HomeStatus(HomeHeadline.CANT_START)
-    if (syncing) return HomeStatus(HomeHeadline.SYNCING)
+    // takeIf: the hub keeps the LAST run's final snapshot — showing it at the
+    // start of the next run would flash a full "N of N" bar before the engine
+    // publishes its reset. Only live snapshots reach the progress line.
+    if (syncing) return HomeStatus(HomeHeadline.SYNCING, progress = progress?.takeIf { it.inFlight })
     if (lastError == SyncErrorKind.NO_SESSION) return HomeStatus(HomeHeadline.NEEDS_RELINK)
     if (lastError != null) return HomeStatus(HomeHeadline.COULDNT_SYNC)
     val report = lastReport ?: return HomeStatus(HomeHeadline.READY)

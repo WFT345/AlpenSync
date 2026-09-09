@@ -33,17 +33,19 @@ class BatchApplier(private val provider: ContentProviderClient) {
         if (intents.isEmpty()) return ApplyResult()
         val chunks = BatchPlanner.plan(account, intents)
         var totalResults = 0
+        val createdRawIds = HashMap<String, Long>()
         for (chunk in chunks) {
-            totalResults += applyChunk(chunk)
+            val results = applyChunk(chunk.ops)
+            totalResults += results.size
+            createdRawIds += harvestCreatedRawIds(chunk.creates, results)
         }
-        return ApplyResult(totalOpsApplied = totalResults)
+        return ApplyResult(totalOpsApplied = totalResults, createdRawIds = createdRawIds)
     }
 
     @Throws(IOException::class)
-    private fun applyChunk(chunk: List<ContentProviderOperation>): Int = try {
+    private fun applyChunk(chunk: List<ContentProviderOperation>): Array<ContentProviderResult> = try {
         @Suppress("DEPRECATION")
-        val results: Array<ContentProviderResult> = provider.applyBatch(ArrayList(chunk))
-        results.size
+        provider.applyBatch(ArrayList(chunk))
     } catch (e: RemoteException) {
         throw IOException("ContactsProvider applyBatch transport failure", e)
     } catch (e: OperationApplicationException) {
@@ -70,4 +72,27 @@ class BatchApplier(private val provider: ContentProviderClient) {
     }
 }
 
-data class ApplyResult(val totalOpsApplied: Int = 0)
+data class ApplyResult(
+    val totalOpsApplied: Int = 0,
+    /**
+     * SOURCE_ID → provider-assigned RawContacts._ID for every CreateContact,
+     * harvested from the applyBatch results. A create missing here means the
+     * provider didn't echo a URI — the engine records that contact as
+     * provider_write_missing instead of guessing an ID.
+     */
+    val createdRawIds: Map<String, Long> = emptyMap(),
+)
+
+/** Maps each chunk's create slots to the raw-contact ID the provider assigned (result URI's last segment). */
+internal fun harvestCreatedRawIds(
+    creates: List<CreateSlot>,
+    results: Array<ContentProviderResult>,
+): Map<String, Long> {
+    if (creates.isEmpty()) return emptyMap()
+    val out = HashMap<String, Long>(creates.size)
+    for (slot in creates) {
+        val rawId = results.getOrNull(slot.opIndex)?.uri?.lastPathSegment?.toLongOrNull() ?: continue
+        out[slot.sourceId] = rawId
+    }
+    return out
+}

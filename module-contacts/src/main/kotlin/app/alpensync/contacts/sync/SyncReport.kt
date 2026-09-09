@@ -53,7 +53,7 @@ data class SyncReport(
     /** Contacts written despite a missing/failing card signature (retain policy). */
     val unverifiedContacts: Int,
 
-    /** Set iff the mass-delete guard aborted the run BEFORE any provider write. */
+    /** Set iff the mass-delete guard aborted the run BEFORE any delete. */
     val guardAbort: GuardAbort?,
 
     /** The run tracker's terminal phase (COMPLETED / ABORTED). */
@@ -63,4 +63,8 @@ data class SyncReport(
 }
 
 /** The guard's verdict payload, surfaced verbatim for the sync log. */
-data class GuardAbort(val pendingDeletions: Int, val lastKnownTotal: Int)
+data class GuardAbort(
+    val pendingDeletions: Int,
+    /** What the run could have deleted: syncable mappings + live tombstones. */
+    val deletableTotal: Int,
+)

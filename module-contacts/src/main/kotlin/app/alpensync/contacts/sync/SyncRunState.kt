@@ -27,11 +27,21 @@ class SyncRunTracker {
     var phase: SyncRunPhase = SyncRunPhase.IDLE
         private set
 
+    var progress: SyncProgress = SyncProgress()
+        private set
+
+    var onProgress: ((SyncProgress) -> Unit)? = null
+
     fun transition(to: SyncRunPhase) {
         require(to in TRANSITIONS.getValue(phase)) {
             "Illegal sync-run transition: $phase -> $to"
         }
         phase = to
+    }
+
+    fun report(progress: SyncProgress) {
+        this.progress = progress
+        onProgress?.invoke(progress)
     }
 
     fun isTerminal(): Boolean = TRANSITIONS.getValue(phase).isEmpty()

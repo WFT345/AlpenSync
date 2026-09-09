@@ -112,33 +112,41 @@ private fun PhoneCard(
 ) {
     AlpenCard(Modifier.fillMaxWidth()) {
         AlpenLockup(stringResource(R.string.home_phone_title))
-        if (!accountLabel.isNullOrBlank()) {
-            AlpenQuietRow(stringResource(R.string.home_account_label), accountLabel)
-        }
-        status.run?.let {
-            if (!accountLabel.isNullOrBlank()) AlpenRuleLine()
-            AlpenQuietRow(stringResource(R.string.home_last_run_label), runLockupText(it))
-        }
-        if (status.headline == HomeHeadline.SYNCING) {
-            if (!accountLabel.isNullOrBlank() || status.run != null) AlpenRuleLine()
-            AlpenLockup(stringResource(R.string.home_syncing))
-            AlpenVSpace(10)
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth(),
-                color = AlpenIce,
-                trackColor = AlpenRule,
-            )
-            AlpenVSpace(8)
-            AlpenBody(stringResource(R.string.home_syncing_body), mute = true)
-        }
-        if (syncController.contactsPermissionGranted && syncController.syncAccountReady) {
-            if (!accountLabel.isNullOrBlank() || status.run != null || status.headline == HomeHeadline.SYNCING) {
-                AlpenRuleLine()
-            }
-            AlpenLockup(stringResource(R.string.sync_interval_label))
-            IntervalRow(syncController)
-        }
+        PhoneIdentity(accountLabel, status)
+        PhoneSyncing(accountLabel, status)
+        PhoneInterval(accountLabel, status, syncController)
     }
+}
+
+@Composable
+private fun PhoneIdentity(accountLabel: String?, status: HomeStatus) {
+    if (!accountLabel.isNullOrBlank()) {
+        AlpenQuietRow(stringResource(R.string.home_account_label), accountLabel)
+    }
+    status.run?.let {
+        if (!accountLabel.isNullOrBlank()) AlpenRuleLine()
+        AlpenQuietRow(stringResource(R.string.home_last_run_label), runLockupText(it))
+    }
+}
+
+@Composable
+private fun PhoneSyncing(accountLabel: String?, status: HomeStatus) {
+    if (status.headline != HomeHeadline.SYNCING) return
+    if (!accountLabel.isNullOrBlank() || status.run != null) AlpenRuleLine()
+    SyncingProgress(status)
+}
+
+@Composable
+private fun PhoneInterval(
+    accountLabel: String?,
+    status: HomeStatus,
+    syncController: SyncDebugController,
+) {
+    if (!syncController.contactsPermissionGranted || !syncController.syncAccountReady) return
+    val hasUpper = !accountLabel.isNullOrBlank() || status.run != null || status.headline == HomeHeadline.SYNCING
+    if (hasUpper) AlpenRuleLine()
+    AlpenLockup(stringResource(R.string.sync_interval_label))
+    IntervalRow(syncController)
 }
 
 @Composable
@@ -255,12 +263,46 @@ private fun intervalLabel(minutes: Long): String =
         stringResource(R.string.sync_interval_minutes, minutes)
     }
 
+@Composable
+private fun SyncingProgress(status: HomeStatus) {
+    AlpenLockup(stringResource(R.string.home_syncing))
+    AlpenVSpace(10)
+    val fraction = status.progress?.fraction
+    if (fraction != null) {
+        LinearProgressIndicator(
+            progress = { fraction },
+            modifier = Modifier.fillMaxWidth(),
+            color = AlpenIce,
+            trackColor = AlpenRule,
+        )
+    } else {
+        LinearProgressIndicator(
+            modifier = Modifier.fillMaxWidth(),
+            color = AlpenIce,
+            trackColor = AlpenRule,
+        )
+    }
+    AlpenVSpace(8)
+    AlpenBody(syncingBody(status), mute = true)
+}
+
+@Composable
+private fun syncingBody(status: HomeStatus): String {
+    val progress = status.progress
+    return if (progress != null && progress.listed > 0) {
+        stringResource(R.string.home_syncing_count, progress.processed, progress.listed)
+    } else {
+        stringResource(R.string.home_syncing_body)
+    }
+}
+
 private fun homeStatusOf(controller: SyncDebugController): HomeStatus = deriveHomeStatus(
     permissionGranted = controller.contactsPermissionGranted,
     accountReady = controller.syncAccountReady,
     syncing = controller.inFlight,
     lastError = controller.lastError,
     lastReport = controller.lastReport,
+    progress = controller.progress,
 )
 
 private fun firstAddress(snapshot: AccountSnapshot): String? = snapshot.addresses.firstOrNull()?.email

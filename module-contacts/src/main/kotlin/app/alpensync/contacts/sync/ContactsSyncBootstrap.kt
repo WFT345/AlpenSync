@@ -102,6 +102,7 @@ object ContactsSyncBootstrap {
             writer = writer,
             stores = stores,
         )
+        pullEngine.tracker.onProgress = SyncProgressHub::publish
         return ContactsSyncRunner(buildDetector(account, provider, stores, writer, dataReader), writeEngine, pullEngine)
     }
 

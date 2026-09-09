@@ -17,6 +17,8 @@ import app.alpensync.contacts.account.CONTACTS_AUTHORITY
 import app.alpensync.contacts.account.ContactsAccountSettings
 import app.alpensync.contacts.account.defaultSyncAccount
 import app.alpensync.contacts.sync.ContactsSyncBootstrap
+import app.alpensync.contacts.sync.SyncProgress
+import app.alpensync.contacts.sync.SyncProgressHub
 import app.alpensync.contacts.sync.SyncReport
 import app.alpensync.contacts.sync.SyncScheduler
 import app.alpensync.core.api.http.AppVersionRejectedException
@@ -55,6 +57,7 @@ class SyncDebugController(private val context: Context) {
     var periodMinutes by mutableStateOf(SyncScheduler.storedPeriodMinutes(context)); private set
     var syncing by mutableStateOf(false); private set
     var adapterSyncing by mutableStateOf(false); private set
+    var progress by mutableStateOf(SyncProgress()); private set
     var lastReport: SyncReport? by mutableStateOf(null); private set
     var lastError: SyncErrorKind? by mutableStateOf(null); private set
 
@@ -62,6 +65,9 @@ class SyncDebugController(private val context: Context) {
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var syncWatchHandle: Any? = null
+    private val progressListener: (SyncProgress) -> Unit = { snapshot ->
+        mainHandler.post { progress = snapshot }
+    }
 
     fun refreshPermissionState() {
         contactsPermissionGranted = CONTACTS_PERMISSIONS.all {
@@ -93,6 +99,7 @@ class SyncDebugController(private val context: Context) {
     fun startWatchingSync() {
         if (syncWatchHandle != null) return
         refreshAdapterSyncing()
+        SyncProgressHub.addListener(progressListener)
         syncWatchHandle = ContentResolver.addStatusChangeListener(
             ContentResolver.SYNC_OBSERVER_TYPE_ACTIVE,
         ) {
@@ -103,6 +110,7 @@ class SyncDebugController(private val context: Context) {
     fun stopWatchingSync() {
         syncWatchHandle?.let { ContentResolver.removeStatusChangeListener(it) }
         syncWatchHandle = null
+        SyncProgressHub.removeListener(progressListener)
     }
 
     private fun refreshAdapterSyncing() {

@@ -204,10 +204,14 @@ class ContactsSyncRunnerTest {
 
         override fun apply(intents: List<RawContactOpIntent>): ApplyResult {
             applied += intents
+            val created = HashMap<String, Long>()
             intents.forEach { intent ->
                 when (intent) {
-                    is RawContactOpIntent.CreateContact ->
-                        existing[intent.projected.protonContactId] = nextRawId++
+                    is RawContactOpIntent.CreateContact -> {
+                        val rawId = nextRawId++
+                        existing[intent.projected.protonContactId] = rawId
+                        created[intent.projected.protonContactId] = rawId
+                    }
                     is RawContactOpIntent.UpdateContact -> Unit
                     is RawContactOpIntent.DeleteContact -> existing.remove(intent.sourceId)
                     is RawContactOpIntent.SetSourceId -> {
@@ -217,7 +221,7 @@ class ContactsSyncRunnerTest {
                     }
                 }
             }
-            return ApplyResult()
+            return ApplyResult(totalOpsApplied = intents.size, createdRawIds = created)
         }
     }
 }

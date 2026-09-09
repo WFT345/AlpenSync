@@ -3,68 +3,32 @@
 
 package app.alpensync.contacts.sync
 
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
-import app.alpensync.contacts.store.CanonicalVCardStore
 import app.alpensync.contacts.vcard.CanonicalVCardText
 import app.alpensync.contacts.vcard.CardCryptoOutcome
 import app.alpensync.contacts.vcard.CardCryptoRequest
 import app.alpensync.contacts.vcard.CardDecryptException
 import app.alpensync.contacts.vcard.ContactDecrypter
-import app.alpensync.contacts.writer.ApplyResult
-import app.alpensync.contacts.writer.ContactsWriterGateway
 import app.alpensync.contacts.writer.RawContactOpIntent
 import app.alpensync.core.api.dto.ContactCardDto
 import app.alpensync.core.api.dto.ContactDto
-import app.alpensync.core.api.dto.ContactMetadataDto
-import app.alpensync.core.db.AlpenSyncDatabase
 import app.alpensync.core.db.entity.ContactMapEntity
 import app.alpensync.core.db.entity.OutboxEntity
-import java.io.IOException
 import kotlinx.coroutines.test.runTest
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 /**
- * Orchestration tests for the M2d sync engine with every external stage
- * faked (listing, fetch, crypto, provider) and a real in-memory Room DB.
- * CLEAR_TEXT cards keep the decrypter on its no-crypto path; the "crypto"
- * lambda only exists to fail cards on demand.
+ * Orchestration tests for the M2d sync engine; the fixture lives in
+ * [ContactsSyncEngineTestBase], the mass-delete-guard runs in
+ * ContactsSyncEngineGuardTest.
  */
 @RunWith(RobolectricTestRunner::class)
-class ContactsSyncEngineTest {
-
-    private lateinit var db: AlpenSyncDatabase
-    private lateinit var store: CanonicalVCardStore
-    private lateinit var writer: FakeWriter
-    private var now: Long = 1_000_000L
-    private var listed: List<ContactMetadataDto> = emptyList()
-    private var dtos: MutableMap<String, ContactDto> = mutableMapOf()
-    private var failingFetches: Set<String> = emptySet()
-    private var decrypter = ContactDecrypter { throw CardDecryptException("unexpected crypto op") }
-    private val fetchCalls = mutableListOf<String>()
-
-    @Before
-    fun setUp() {
-        db = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            AlpenSyncDatabase::class.java,
-        ).allowMainThreadQueries().build()
-        // Identity wrap: the store's crypto is CanonicalVCardStoreTest's
-        // concern; here it only needs to persist and return text.
-        store = CanonicalVCardStore(db.canonicalVCardDao(), { it }, { it }, {})
-        writer = FakeWriter()
-    }
-
-    @After
-    fun tearDown() = db.close()
+class ContactsSyncEngineTest : ContactsSyncEngineTestBase() {
 
     @Test
     fun first_sync_writes_everything_and_records_mappings_and_state() = runTest {
@@ -143,25 +107,6 @@ class ContactsSyncEngineTest {
     }
 
     @Test
-    fun mass_delete_guard_aborts_before_any_apply_and_records_the_abort() = runTest {
-        repeat(10) { addContact("c$it", "Name $it", "n$it@example.org") }
-        newEngine().run()
-        writer.applied.clear()
-
-        // The server listing suddenly shrinks to 4 of 10 → 6 pending deletes.
-        listed = (0..3).map { meta("c$it") }
-        val engine = newEngine()
-        val report = engine.run()
-
-        assertEquals(SyncRunPhase.ABORTED, engine.tracker.phase)
-        assertEquals(GuardAbort(pendingDeletions = 6, lastKnownTotal = 10), report.guardAbort)
-        assertTrue("guard abort must skip ALL provider writes", writer.applied.isEmpty())
-        assertEquals("no tombstones created on abort", 0, db.tombstoneDao().listForAccount(ACCOUNT).size)
-        assertEquals("last_known_total must not move on abort", 10, db.syncStateDao().get(ACCOUNT)?.lastKnownTotal)
-        assertEquals("every mapping survives", 10, db.contactMapDao().countForAccount(ACCOUNT))
-    }
-
-    @Test
     fun remote_delete_tombstones_then_sweeps_after_the_grace_period() = runTest {
         addContact("c1", "Alice", "alice@example.org")
         newEngine().run()
@@ -208,7 +153,11 @@ class ContactsSyncEngineTest {
         // A local edit is queued (PENDING_PUSH) while the server side moved.
         db.contactMapDao().markPendingPush(ACCOUNT, "c1")
         listed = listOf(meta("c1", modifyTime = 2L))
-        dtos["c1"] = ContactDto(id = "c1", modifyTime = 2L, cards = listOf(clearCard(vcard("Alice S", "s@example.org"))))
+        dtos["c1"] = ContactDto(
+            id = "c1",
+            modifyTime = 2L,
+            cards = listOf(clearCard(vcard("Alice S", "s@example.org"))),
+        )
         val report = newEngine().run()
 
         assertTrue("push-side owns the convergence — no fetch", fetchCalls.isEmpty())
@@ -356,63 +305,4 @@ class ContactsSyncEngineTest {
         lastSyncedAt = 1L,
         lastKnownServerPayloadHash = null,
     )
-
-    private fun addContact(id: String, name: String, email: String) {
-        listed = listed + meta(id)
-        dtos[id] = ContactDto(id = id, modifyTime = 1L, cards = listOf(clearCard(vcard(name, email))))
-    }
-
-    private fun newEngine() = ContactsSyncEngine(
-        accountName = ACCOUNT,
-        listMetadata = { listed },
-        fetchContact = { id ->
-            fetchCalls += id
-            if (id in failingFetches) throw IOException("simulated network failure")
-            dtos.getValue(id)
-        },
-        decrypter = decrypter,
-        writer = writer,
-        stores = ContactsSyncStore(db, store),
-        clock = { now },
-    )
-
-    private class FakeWriter : ContactsWriterGateway {
-        val applied = mutableListOf<List<RawContactOpIntent>>()
-        val existing = mutableMapOf<String, Long>()
-        private var nextRawId = 1_000L
-
-        override fun readExistingRawIds(): Map<String, Long> = existing.toMap()
-
-        override fun apply(intents: List<RawContactOpIntent>): ApplyResult {
-            applied += intents
-            intents.forEach { intent ->
-                when (intent) {
-                    is RawContactOpIntent.CreateContact ->
-                        existing[intent.projected.protonContactId] = nextRawId++
-                    is RawContactOpIntent.UpdateContact -> Unit // raw row keeps its ID
-                    is RawContactOpIntent.DeleteContact -> existing.remove(intent.sourceId)
-                    is RawContactOpIntent.SetSourceId -> {
-                        // The provider re-keys the row: old (possibly null) SOURCE_ID → the stamped
-                        // one. A locally-created row exists provider-side even with a null
-                        // SOURCE_ID, so it is absent from this map until stamped.
-                        existing.entries.singleOrNull { it.value == intent.rawContactId }
-                            ?.let { existing.remove(it.key) }
-                        existing[intent.sourceId] = intent.rawContactId
-                    }
-                }
-            }
-            return ApplyResult()
-        }
-    }
-
-    private companion object {
-        const val ACCOUNT = "default"
-
-        fun meta(id: String, modifyTime: Long = 1L) = ContactMetadataDto(id = id, modifyTime = modifyTime)
-
-        fun vcard(name: String, email: String): String =
-            "BEGIN:VCARD\r\nVERSION:4.0\r\nFN:$name\r\nEMAIL:$email\r\nEND:VCARD\r\n"
-
-        fun clearCard(data: String) = ContactCardDto(type = 0, data = data)
-    }
 }

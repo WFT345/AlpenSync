@@ -17,12 +17,12 @@ class MassDeleteGuardTest {
     @Test fun exactlyFiftyPercentProceeds() {
         assertEquals(
             MassDeleteGuard.Verdict.Proceed,
-            MassDeleteGuard.check(pendingDeletions = 5, lastKnownTotal = 10),
+            MassDeleteGuard.check(pendingDeletions = 5, deletableTotal = 10),
         )
     }
 
     @Test fun oneOverFiftyPercentAborts() {
-        val verdict = MassDeleteGuard.check(pendingDeletions = 6, lastKnownTotal = 10)
+        val verdict = MassDeleteGuard.check(pendingDeletions = 6, deletableTotal = 10)
         assertEquals(MassDeleteGuard.Verdict.Abort(6, 10), verdict)
     }
 
@@ -33,8 +33,8 @@ class MassDeleteGuardTest {
     }
 
     @Test fun guardIsInactiveBelowTheFloor() {
-        // 9 known, all 9 deleted: under the floor the account is allowed to
-        // churn to zero (small accounts legitimately do).
+        // 9 deletable, all 9 deleted: under the floor the account is allowed
+        // to churn to zero (small accounts legitimately do).
         assertEquals(MassDeleteGuard.Verdict.Proceed, MassDeleteGuard.check(9, 9))
     }
 
@@ -43,7 +43,7 @@ class MassDeleteGuardTest {
     }
 
     @Test fun noKnownHistoryMeansNoGuard() {
-        // First sync: last_known_total is 0 — nothing to protect.
+        // First sync: nothing mapped yet — nothing to protect.
         assertEquals(MassDeleteGuard.Verdict.Proceed, MassDeleteGuard.check(0, 0))
     }
 

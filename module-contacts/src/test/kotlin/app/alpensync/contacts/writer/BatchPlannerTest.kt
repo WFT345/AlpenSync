@@ -34,9 +34,9 @@ class BatchPlannerTest {
         // cap of 10, every chunk must hold a multiple of 3 and never exceed 10.
         val intents = (1..100).map { RawContactOpIntent.CreateContact(contact("c$it")) }
         val chunks = BatchPlanner.plan(account, intents, maxOpsPerBatch = 10)
-        assertTrue("no chunk may exceed the cap", chunks.all { it.size <= 10 })
-        assertTrue("no intent may straddle chunks", chunks.all { it.size % 3 == 0 })
-        assertEquals("total ops preserved", 300, chunks.sumOf { it.size })
+        assertTrue("no chunk may exceed the cap", chunks.all { it.ops.size <= 10 })
+        assertTrue("no intent may straddle chunks", chunks.all { it.ops.size % 3 == 0 })
+        assertEquals("total ops preserved", 300, chunks.sumOf { it.ops.size })
     }
 
     @Test
@@ -50,7 +50,7 @@ class BatchPlannerTest {
         val chunks = BatchPlanner.plan(account, intents, maxOpsPerBatch = 4)
         // chunk 0: [Create 3] (Update's 3 would overflow) → chunk 1: [Update 3, Delete 1]
         // → chunk 2: [Delete 1].
-        assertEquals(listOf(3, 4, 1), chunks.map { it.size })
+        assertEquals(listOf(3, 4, 1), chunks.map { it.ops.size })
     }
 
     @Test
@@ -61,8 +61,22 @@ class BatchPlannerTest {
         // stay valid; the instrumented test proves end-to-end attachment).
         val intents = (1..4).map { RawContactOpIntent.CreateContact(contact("c$it")) }
         val chunks = BatchPlanner.plan(account, intents, maxOpsPerBatch = 6)
-        assertEquals(listOf(6, 6), chunks.map { it.size })
-        assertTrue(chunks.flatten().all { it.isInsert })
+        assertEquals(listOf(6, 6), chunks.map { it.ops.size })
+        assertTrue(chunks.flatMap { it.ops }.all { it.isInsert })
+    }
+
+    @Test
+    fun create_slots_point_at_each_creates_raw_insert() {
+        val intents = listOf(
+            RawContactOpIntent.DeleteContact("gone"), // 1 op
+            RawContactOpIntent.CreateContact(contact("c1")), // 3 ops, insert at index 1
+            RawContactOpIntent.CreateContact(contact("c2")), // 3 ops, insert at index 4
+        )
+        val chunks = BatchPlanner.plan(account, intents)
+        assertEquals(
+            listOf(CreateSlot(opIndex = 1, sourceId = "c1"), CreateSlot(opIndex = 4, sourceId = "c2")),
+            chunks.single().creates,
+        )
     }
 
     @Test
