@@ -194,7 +194,7 @@ class ContactsSyncEngine(
             run.stats.unchanged++
             return
         }
-        val canonical = fetchOne(meta.id, run.stats) ?: return
+        val canonical = fetchOne(meta.id, run.stats, run.nowMs) ?: return
         canonicals += canonical
         persistOne(canonical, mapping, run)
     }
@@ -219,25 +219,25 @@ class ContactsSyncEngine(
         meta.modifyTime <= mapping.modifyTime && meta.id !in tombstonedIds
 
     /** Null return = the contact failed loudly and was counted; never a silent drop. */
-    private suspend fun fetchOne(protonContactId: String, stats: PullRunStats): CanonicalContact? {
+    private suspend fun fetchOne(protonContactId: String, stats: PullRunStats, nowMs: Long): CanonicalContact? {
         val dto = try {
             fetchContact(protonContactId)
         } catch (e: IOException) {
             // 9001 / app-version rejection gate every subsequent call — abort
             // the run by rethrowing (the SyncAdapter maps them to auth errors).
             if (e is HumanVerificationRequiredException || e is AppVersionRejectedException) throw e
-            applyStage.markError(protonContactId, e.javaClass.simpleName, stats)
+            applyStage.markError(protonContactId, e.javaClass.simpleName, stats, nowMs)
             return null
         } catch (e: IllegalArgumentException) {
             // Strict DTO parsing failing closed (Rule 5) — the API shape moved.
-            applyStage.markError(protonContactId, e.javaClass.simpleName, stats)
+            applyStage.markError(protonContactId, e.javaClass.simpleName, stats, nowMs)
             return null
         }
         stats.fetched++
         val result = decrypter.decryptContact(dto.cards)
         if (result.failures.isNotEmpty()) {
             stats.cardFailures += result.failures.size
-            applyStage.markError(protonContactId, "card_failures", stats)
+            applyStage.markError(protonContactId, "card_failures", stats, nowMs)
             return null
         }
         val canonical = VCardMerger.merge(protonContactId, result.cards)
@@ -316,8 +316,15 @@ internal data class PullSnapshot(
     val placeholders: Map<String, ContactMapEntity>,
     val knownRawIds: MutableMap<String, Long>,
 ) {
-    /** What this run could delete — the mass-delete guard's denominator. */
-    val deletableTotal: Int get() = syncableMappings.size + tombstones.size
+    /**
+     * What this run could delete — the mass-delete guard's denominator.
+     * Grace-period contacts are NOT added on top: their mapping rows stay in
+     * place until the sweep expires them (ContactApplyStage.sweep), so they
+     * are already counted in [syncableMappings]. Adding live tombstones
+     * again would double-count them and relax the guard exactly while
+     * deletions pile up.
+     */
+    val deletableTotal: Int get() = syncableMappings.size
 }
 
 /** Mutable per-run counters; the report is built from it at the end. */

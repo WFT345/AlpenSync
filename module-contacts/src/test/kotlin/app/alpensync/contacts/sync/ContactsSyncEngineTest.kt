@@ -72,6 +72,8 @@ class ContactsSyncEngineTest : ContactsSyncEngineTestBase() {
         assertEquals(1, report.inserted)
         assertEquals(1, report.contactErrors)
         assertNull(db.contactMapDao().findByProtonId(ACCOUNT, "c2"))
+        // No mapping row exists for c2 — the durable error row is the only record.
+        assertEquals(listOf("c2"), db.syncErrorDao().listForAccount(ACCOUNT).map { it.protonContactId })
 
         // Next run retries the failed contact (it has no mapping → re-fetch).
         failingFetches = emptySet()
@@ -79,6 +81,7 @@ class ContactsSyncEngineTest : ContactsSyncEngineTestBase() {
         assertEquals(1, second.inserted)
         assertEquals(0, second.contactErrors)
         assertNotNull(db.contactMapDao().findByProtonId(ACCOUNT, "c2"))
+        assertEquals("success clears the recorded failure", 0, db.syncErrorDao().countForAccount(ACCOUNT))
     }
 
     @Test
@@ -216,25 +219,8 @@ class ContactsSyncEngineTest : ContactsSyncEngineTestBase() {
 
     @Test
     fun server_contact_matching_a_placeholder_uid_collapses_into_the_pending_create() = runTest {
-        // A create was pushed but its response was lost: the placeholder
-        // mapping + outbox row are still around, and the next pull lists the
-        // server contact carrying OUR client-generated UID (ADR 0007 §3).
-        db.contactMapDao().upsert(placeholderMapping())
-        db.outboxDao().insert(
-            OutboxEntity(
-                accountName = ACCOUNT,
-                protonContactId = "local-7",
-                opType = OutboxEntity.OpType.CREATE,
-                payloadHash = "payload",
-                createdAt = now,
-            ),
-        )
-        decrypter = ContactDecrypter { request ->
-            when (request) {
-                is CardCryptoRequest.VerifyOnly -> CardCryptoOutcome(request.data, verified = true)
-                else -> throw CardDecryptException("unexpected crypto op")
-            }
-        }
+        // The server contact carries OUR client-generated UID from the lost create (ADR 0007 §3).
+        seedPendingCreateWithLostResponse()
         listed = listOf(meta("srv-9"))
         dtos["srv-9"] = ContactDto(
             id = "srv-9",
@@ -289,6 +275,30 @@ class ContactsSyncEngineTest : ContactsSyncEngineTestBase() {
         assertTrue(!store.exists(ACCOUNT, "c1"))
         assertTrue(db.outboxDao().findByContact(ACCOUNT, "c1").isEmpty())
         assertNull(db.contactMapDao().findByProtonId(ACCOUNT, "c1"))
+    }
+
+    /**
+     * The ADR 0007 §3 setup: a create was pushed but its response was lost,
+     * so the placeholder mapping + outbox row are still around; the decrypter
+     * passes SIGNED cards (the only card type a UID is accepted from).
+     */
+    private suspend fun seedPendingCreateWithLostResponse() {
+        db.contactMapDao().upsert(placeholderMapping())
+        db.outboxDao().insert(
+            OutboxEntity(
+                accountName = ACCOUNT,
+                protonContactId = "local-7",
+                opType = OutboxEntity.OpType.CREATE,
+                payloadHash = "payload",
+                createdAt = now,
+            ),
+        )
+        decrypter = ContactDecrypter { request ->
+            when (request) {
+                is CardCryptoRequest.VerifyOnly -> CardCryptoOutcome(request.data, verified = true)
+                else -> throw CardDecryptException("unexpected crypto op")
+            }
+        }
     }
 
     private fun placeholderMapping() = ContactMapEntity(

@@ -136,8 +136,7 @@ class ContactWriteEngineCreateTest {
         fixture.seedMapping(
             "local-7",
             rawId = 7L,
-            uid = "urn:uuid:stable-1",
-            status = ContactMapEntity.Status.PENDING_PUSH,
+            seed = MappingSeed(uid = "urn:uuid:stable-1", status = ContactMapEntity.Status.PENDING_PUSH),
         )
         fixture.seedOutbox("local-7", OutboxEntity.OpType.CREATE)
         fixture.localRows[7L] = localProjection("local-7", "Alice Local")

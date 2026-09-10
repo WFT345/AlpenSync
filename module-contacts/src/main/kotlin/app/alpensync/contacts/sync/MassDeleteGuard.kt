@@ -14,9 +14,11 @@ package app.alpensync.contacts.sync
  * churn past 50%).
  *
  * The denominator is the deletable universe — the run-start snapshot of
- * syncable mappings + live tombstones — not a persisted watermark: a first
- * pull killed midway has exactly the contacts it landed as its universe, so
- * a later empty listing still trips the guard (ADR 0005 §1 amendment).
+ * syncable mappings — not a persisted watermark: a first pull killed midway
+ * has exactly the contacts it landed as its universe, so a later empty
+ * listing still trips the guard (ADR 0005 §1 amendment). Grace-period
+ * tombstones are NOT added on top: their mapping rows stay until the sweep,
+ * so they are already in the mapping count (adding them would double-count).
  *
  * Pure function over the diff + that count; the engine surfaces an
  * [Verdict.Abort] as a typed error in the sync log.

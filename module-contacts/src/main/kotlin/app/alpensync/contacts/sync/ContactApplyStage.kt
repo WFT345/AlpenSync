@@ -11,6 +11,7 @@ import app.alpensync.contacts.writer.ContactsWriterGateway
 import app.alpensync.contacts.writer.RawContactOpIntent
 import app.alpensync.core.db.AlpenSyncDatabase
 import app.alpensync.core.db.entity.ContactMapEntity
+import app.alpensync.core.db.entity.SyncErrorEntity
 import app.alpensync.core.db.entity.TombstoneEntity
 
 /**
@@ -88,9 +89,13 @@ internal class ContactApplyStage(
         reconcileMappings(diff, canonicals, snap, collapsed, nowMs, stats)
     }
 
-    suspend fun markError(protonContactId: String, tag: String, stats: PullRunStats) {
+    suspend fun markError(protonContactId: String, tag: String, stats: PullRunStats, nowMs: Long) {
         stats.contactErrors++
+        // contact_map.markError is an UPDATE: for a contact with no mapping
+        // row yet it affects zero rows. sync_errors is the durable record —
+        // a first-pull failure must survive the run, not just its counter.
         db.contactMapDao().markError(accountName, protonContactId, tag)
+        db.syncErrorDao().upsert(SyncErrorEntity(accountName, protonContactId, tag, nowMs))
     }
 
     suspend fun sweep(diff: ContactDiff, tombstones: List<TombstoneEntity>, nowMs: Long, stats: PullRunStats) {
@@ -172,7 +177,7 @@ internal class ContactApplyStage(
     ) {
         val rawId = context.postApply[new.projected.protonContactId]
         if (rawId == null) {
-            markError(new.projected.protonContactId, "provider_write_missing", stats)
+            markError(new.projected.protonContactId, "provider_write_missing", stats, nowMs)
             return
         }
         collapsed[new.projected.protonContactId]?.let { placeholder ->
@@ -197,6 +202,7 @@ internal class ContactApplyStage(
         nowMs: Long,
     ) {
         val id = projected.protonContactId
+        db.syncErrorDao().clear(accountName, id) // any earlier failure is spent
         db.contactMapDao().upsert(
             ContactMapEntity(
                 accountName = accountName,

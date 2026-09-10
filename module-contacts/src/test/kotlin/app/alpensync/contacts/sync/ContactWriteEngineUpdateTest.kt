@@ -94,7 +94,10 @@ class ContactWriteEngineUpdateTest {
         assertTrue("retry must still see the pre-push ancestor", stored.contains("FN:Alice Base"))
         assertFalse(stored.contains("FN:Alice Server"))
         assertNotNull(fixture.outboxRow("pc-1"))
-        assertEquals(ContactMapEntity.Status.PENDING_PUSH, db.contactMapDao().findByProtonId(ACCOUNT, "pc-1")?.syncStatus)
+        assertEquals(
+            ContactMapEntity.Status.PENDING_PUSH,
+            db.contactMapDao().findByProtonId(ACCOUNT, "pc-1")?.syncStatus,
+        )
     }
 
     @Test fun update_with_disjoint_server_edit_merges_and_applies_server_state_to_provider() = runTest {
@@ -144,9 +147,10 @@ class ContactWriteEngineUpdateTest {
         fixture.seedMapping(
             "pc-1",
             rawId = 7L,
-            status = ContactMapEntity.Status.PENDING_PUSH,
-            lastKnownHash = null,
-            contentHash = ContactHasher.contentHash(baselineProjection()),
+            seed = MappingSeed(
+                status = ContactMapEntity.Status.PENDING_PUSH,
+                contentHash = ContactHasher.contentHash(baselineProjection()),
+            ),
         )
         fixture.seedOutbox("pc-1", OutboxEntity.OpType.UPDATE)
         fixture.api.fetchCanonicalHandler = { canonicalOf("pc-1", baseText) }
@@ -267,9 +271,11 @@ class ContactWriteEngineUpdateTest {
         fixture.seedMapping(
             "pc-1",
             rawId = 7L,
-            status = ContactMapEntity.Status.PENDING_PUSH,
-            lastKnownHash = CanonicalVCardText.payloadHash(baseText),
-            contentHash = ContactHasher.contentHash(baselineProjection()),
+            seed = MappingSeed(
+                status = ContactMapEntity.Status.PENDING_PUSH,
+                lastKnownHash = CanonicalVCardText.payloadHash(baseText),
+                contentHash = ContactHasher.contentHash(baselineProjection()),
+            ),
         )
         fixture.seedOutbox("pc-1", OutboxEntity.OpType.UPDATE)
         val theirsText = CanonicalVCardText.write(vcard(theirs))

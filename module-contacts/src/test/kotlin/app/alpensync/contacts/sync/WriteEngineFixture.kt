@@ -70,26 +70,21 @@ internal class WriteEngineFixture(val db: AlpenSyncDatabase) {
     suspend fun seedMapping(
         id: String,
         rawId: Long,
-        uid: String? = "urn:uuid:$id",
-        status: Int = ContactMapEntity.Status.CLEAN,
-        lastKnownHash: String? = null,
-        contentHash: String = "content-$id",
-        photoHash: String? = null,
-        modifyTime: Long = 1L,
+        seed: MappingSeed = MappingSeed(),
     ) = db.contactMapDao().upsert(
         ContactMapEntity(
             accountName = ACCOUNT,
             protonContactId = id,
-            protonUid = uid,
+            protonUid = seed.uid ?: "urn:uuid:$id",
             androidRawContactId = rawId,
-            modifyTime = modifyTime,
-            contentHash = contentHash,
-            photoHash = photoHash,
+            modifyTime = seed.modifyTime,
+            contentHash = seed.contentHash ?: "content-$id",
+            photoHash = seed.photoHash,
             isVerified = true,
-            syncStatus = status,
+            syncStatus = seed.status,
             lastError = null,
             lastSyncedAt = 1L,
-            lastKnownServerPayloadHash = lastKnownHash,
+            lastKnownServerPayloadHash = seed.lastKnownHash,
         ),
     )
 
@@ -154,7 +149,10 @@ internal class FakeWriteApi : ContactWriteApi {
         CreateContactsResponse(
             code = 1000,
             responses = listOf(
-                CreateContactResponseItem(0, CreateContactResponseBody(1000, ContactDto(id = "srv-created", modifyTime = 42L))),
+                CreateContactResponseItem(
+                    0,
+                    CreateContactResponseBody(1000, ContactDto(id = "srv-created", modifyTime = 42L)),
+                ),
             ),
         )
     }
@@ -217,3 +215,13 @@ internal fun localProjection(id: String, name: String, vararg extraPhones: Strin
         phones = listOf(ProjectedPhone("+1-111", listOf("cell"), false)) +
             extraPhones.map { ProjectedPhone(it, emptyList(), false) },
     )
+
+/** The optional knobs of a seeded mapping row; a null uid/contentHash derives from the contact id. */
+internal data class MappingSeed(
+    val uid: String? = null,
+    val status: Int = ContactMapEntity.Status.CLEAN,
+    val lastKnownHash: String? = null,
+    val contentHash: String? = null,
+    val photoHash: String? = null,
+    val modifyTime: Long = 1L,
+)

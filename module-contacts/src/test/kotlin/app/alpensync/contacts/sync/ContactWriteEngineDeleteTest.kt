@@ -66,7 +66,11 @@ class ContactWriteEngineDeleteTest {
     @Test fun delete_after_grace_cleans_mapping_store_outbox_and_provider_row() = runTest {
         seedMapping("pc-1")
         fixture.store.write(ACCOUNT, "pc-1", "BEGIN:VCARD\r\nVERSION:4.0\r\nFN:A\r\nEND:VCARD\r\n")
-        fixture.seedOutbox("pc-1", OutboxEntity.OpType.DELETE, createdAt = fixture.now - OutboxEntity.GRACE_PERIOD_MS - 1)
+        fixture.seedOutbox(
+            "pc-1",
+            OutboxEntity.OpType.DELETE,
+            createdAt = fixture.now - OutboxEntity.GRACE_PERIOD_MS - 1,
+        )
 
         val report = fixture.newEngine().push()
 
@@ -106,7 +110,11 @@ class ContactWriteEngineDeleteTest {
     }
 
     @Test fun delete_for_an_already_unmapped_contact_is_fulfilled_without_a_call() = runTest {
-        fixture.seedOutbox("pc-gone", OutboxEntity.OpType.DELETE, createdAt = fixture.now - OutboxEntity.GRACE_PERIOD_MS - 1)
+        fixture.seedOutbox(
+            "pc-gone",
+            OutboxEntity.OpType.DELETE,
+            createdAt = fixture.now - OutboxEntity.GRACE_PERIOD_MS - 1,
+        )
 
         val report = fixture.newEngine().push()
 
@@ -121,7 +129,11 @@ class ContactWriteEngineDeleteTest {
         seedMapping("pc-del")
         fixture.seedOutbox("pc-del", OutboxEntity.OpType.DELETE, createdAt = past)
         seedPendingUpdate()
-        fixture.seedMapping("local-9", rawId = 9L, uid = "urn:uuid:nine", status = ContactMapEntity.Status.PENDING_PUSH)
+        fixture.seedMapping(
+            "local-9",
+            rawId = 9L,
+            seed = MappingSeed(uid = "urn:uuid:nine", status = ContactMapEntity.Status.PENDING_PUSH),
+        )
         fixture.seedOutbox("local-9", OutboxEntity.OpType.CREATE, createdAt = past)
         fixture.localRows[9L] = localProjection("local-9", "New Nine")
 
@@ -141,8 +153,10 @@ class ContactWriteEngineDeleteTest {
         fixture.seedMapping(
             "pc-1",
             rawId = 7L,
-            status = ContactMapEntity.Status.PENDING_PUSH,
-            lastKnownHash = CanonicalVCardText.payloadHash(baseText),
+            seed = MappingSeed(
+                status = ContactMapEntity.Status.PENDING_PUSH,
+                lastKnownHash = CanonicalVCardText.payloadHash(baseText),
+            ),
         )
         fixture.seedOutbox("pc-1", OutboxEntity.OpType.UPDATE, createdAt = fixture.now)
         fixture.api.fetchCanonicalHandler = { canonicalOf("pc-1", baseText) }

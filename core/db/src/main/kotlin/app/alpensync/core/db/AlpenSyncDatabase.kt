@@ -17,6 +17,7 @@ import app.alpensync.core.db.dao.ConflictCopyDao
 import app.alpensync.core.db.dao.ContactMapDao
 import app.alpensync.core.db.dao.GroupMapDao
 import app.alpensync.core.db.dao.OutboxDao
+import app.alpensync.core.db.dao.SyncErrorDao
 import app.alpensync.core.db.dao.SyncStateDao
 import app.alpensync.core.db.dao.TombstoneDao
 import app.alpensync.core.db.entity.CanonicalVCardEntity
@@ -24,6 +25,7 @@ import app.alpensync.core.db.entity.ConflictCopyEntity
 import app.alpensync.core.db.entity.ContactMapEntity
 import app.alpensync.core.db.entity.GroupMapEntity
 import app.alpensync.core.db.entity.OutboxEntity
+import app.alpensync.core.db.entity.SyncErrorEntity
 import app.alpensync.core.db.entity.SyncStateEntity
 import app.alpensync.core.db.entity.TombstoneEntity
 
@@ -39,9 +41,14 @@ import app.alpensync.core.db.entity.TombstoneEntity
  * layer lives in :module-contacts). This is the ADR 0007 Section 5(i)
  * decision and is recorded honestly in THREAT_MODEL.md / DATAFLOW.md.
  *
+ * v3 adds `sync_errors`: durable per-contact failure rows, because
+ * contact_map.markError (an UPDATE) cannot record a failure for a contact
+ * that has no mapping row yet. Tags only — never contact content.
+ *
  * `exportSchema = true` writes each version's JSON dump to
- * `:core:db/schemas/`; the v1→v2 auto-migration is verified by a Robolectric
- * migration test that builds a raw v1 database from the exported v1 DDL.
+ * `:core:db/schemas/`; each auto-migration is verified by a Robolectric
+ * migration test that builds a raw old-version database from the exported
+ * DDL.
  */
 @Database(
     entities = [
@@ -52,9 +59,10 @@ import app.alpensync.core.db.entity.TombstoneEntity
         ConflictCopyEntity::class,
         CanonicalVCardEntity::class,
         GroupMapEntity::class,
+        SyncErrorEntity::class,
     ],
-    version = 2,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    version = 3,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
     exportSchema = true,
 )
 abstract class AlpenSyncDatabase : RoomDatabase() {
@@ -65,6 +73,7 @@ abstract class AlpenSyncDatabase : RoomDatabase() {
     abstract fun conflictCopyDao(): ConflictCopyDao
     abstract fun canonicalVCardDao(): CanonicalVCardDao
     abstract fun groupMapDao(): GroupMapDao
+    abstract fun syncErrorDao(): SyncErrorDao
 
     companion object {
         const val DATABASE_NAME = "alpensync.db"

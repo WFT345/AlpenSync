@@ -111,10 +111,11 @@ class OutboxEntryPusher(
         val plan = factory.buildCreate(local, uid)
         // A lost or incomplete create response must not POST again (research
         // notes §2.4): the server may already have the contact. Quarantine
-        // and let the next pull collapse by UID.
+        // and let the next pull collapse by UID — the quarantine tag is the
+        // record, surfaced for user requeue by the engine.
         val item = try {
             api.create(plan.request).responses.singleOrNull()
-        } catch (e: IOException) {
+        } catch (ignored: IOException) {
             return PushOutcome.Quarantine("create_maybe_landed")
         } ?: return PushOutcome.Quarantine("create_maybe_landed")
         if (item.response.code != CODE_SUCCESS) {

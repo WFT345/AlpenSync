@@ -86,11 +86,14 @@ class ContactsWriterInstrumentedTest {
     fun create_then_read_back_every_field_kind_including_photo_bytes() {
         val photoBytes = syntheticJpeg()
         val contact = fullContact(photoBytes)
-        BatchApplier(provider).apply(account, listOf(RawContactOpIntent.CreateContact(contact)))
+        val result = BatchApplier(provider).apply(account, listOf(RawContactOpIntent.CreateContact(contact)))
 
         val rawId = RawContactReader(provider).readExisting(account)["c1"]
         assertNotNull("RawContact must exist after create", rawId)
         rawId!!
+        // The applyBatch harvest must report the same provider-assigned ID a
+        // fresh provider scan finds — the engine's contact_map rows rely on it.
+        assertEquals(rawId, result.createdRawIds["c1"])
 
         assertEquals(listOf("Alice Example"), column(rawId, StructuredName.CONTENT_ITEM_TYPE, StructuredName.DISPLAY_NAME))
         assertEquals(listOf("alice@example.org"), column(rawId, Email.CONTENT_ITEM_TYPE, Email.ADDRESS))
