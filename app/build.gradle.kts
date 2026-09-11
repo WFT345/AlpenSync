@@ -12,7 +12,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0-m1"
+        versionName = "0.1.0"
     }
 
     buildTypes {
@@ -25,9 +25,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // No signing config yet: signed + reproducible releases land at M4
-            // (plan Section 6). Release APKs built now are unsigned, for CI
-            // minification verification only — never distributed.
+            // No signing config yet: F-Droid builds from source and signs with
+            // its own key, so the F-Droid release needs nothing here. A local
+            // config lands at M4 (plan Section 6) for self-distributed APKs;
+            // release builds until then are unsigned and exist only to
+            // exercise minification in CI — never distributed.
         }
         debug {
             // Defaults; no debug-only keys, no debug-only logging of secrets (Rule 1).

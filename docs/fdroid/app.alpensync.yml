@@ -1,0 +1,37 @@
+# Draft F-Droid metadata for AlpenSync.
+#
+# To submit: fork https://gitlab.com/fdroid/fdroiddata, place this file at
+# metadata/app.alpensync.yml, and open a merge request. Optionally open an
+# RFP issue at https://gitlab.com/fdroid/rfp first.
+#
+# Name/summary/description are intentionally omitted: F-Droid picks them up
+# from this repo's fastlane/metadata/android/en-US/ directory.
+Categories:
+  - Internet
+  - Security
+License: GPL-3.0-only
+AuthorName: WFT345
+WebSite: https://alpensync.org
+SourceCode: https://github.com/WFT345/AlpenSync
+IssueTracker: https://github.com/WFT345/AlpenSync/issues
+
+# Proton's backend is proprietary and the app's core function depends on it.
+AntiFeatures:
+  NonFreeNet:
+    en-US: Syncs exclusively with Proton's servers, whose backend software is proprietary. AlpenSync is an independent client and is not affiliated with Proton AG.
+
+AutoName: AlpenSync
+
+RepoType: git
+Repo: https://github.com/WFT345/AlpenSync.git
+
+Builds:
+  - versionName: 0.1.0
+    versionCode: 1
+    commit: v0.1.0
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags

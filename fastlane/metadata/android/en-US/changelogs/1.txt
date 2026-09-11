@@ -1,0 +1,5 @@
+First public release.
+
+Two-way contacts sync between Proton and your Android device: pull your Proton contacts to the device, push local edits back. Local-only storage, no analytics, no ads, no trackers.
+
+Pre-1.0 notes: sync runs periodically (no instant push yet); Proton accounts that use a separate mailbox password are not supported yet.
