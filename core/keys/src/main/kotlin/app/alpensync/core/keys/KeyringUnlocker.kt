@@ -70,7 +70,9 @@ object KeyringUnlocker {
             ?: throw KeyringUnlockException("no active primary key in /users")
         val saltB64 = salts.keySalts.firstOrNull { it.keyId == primaryDto.id }?.keySalt
             ?: throw KeyringUnlockException("no KeySalt for the primary key (activation pending?)")
-        return ComputeKeyPassword.derive(password, saltB64).toByteArray(Charsets.UTF_8)
+        // derive already returns the ASCII bytes caller-owned and
+        // zeroable (audit finding L1) — no String round-trip.
+        return ComputeKeyPassword.derive(password, saltB64)
     }
 
     /**

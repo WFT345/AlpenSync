@@ -164,8 +164,10 @@ class KeyringUnlockerTest {
         val saltB64: String = Base64.getEncoder().encodeToString(TEST_SALT)
 
         // The bcrypt-derived mailbox keyPassword — used as the user ring's
-        // passphrase so the fixture matches production wiring.
-        val keyPassword: String = ComputeKeyPassword.derive(password.copyOf(), saltB64)
+        // passphrase so the fixture matches production wiring. derive now
+        // returns zeroable bytes (audit finding L1); a String copy is fine
+        // in test heap.
+        val keyPassword: String = String(ComputeKeyPassword.derive(password.copyOf(), saltB64), Charsets.US_ASCII)
 
         val userRing: PGPSecretKeyRing = TestPgp.generateRing(
             keyPassword.toCharArray(), withSubkey = true, identity = "user@alpensync.test",

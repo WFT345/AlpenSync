@@ -3,8 +3,10 @@
 // Adapted from pcontacts (GPL-3.0), https://github.com/andreabenetton/pcontacts @ bf9b0c5,
 // path core/storage/src/main/kotlin/io/pcontacts/core/storage/EncryptedSecretStore.kt
 // Deviation: per-account storage (plan Section 5.5) — the prefs file and the
-// KEK alias are both suffixed with the account id; account ids are sanitized
-// so a hostile value can never escape the file/alias namespace.
+// KEK alias are both suffixed with [AccountStorageKey.of] the account id: a
+// SHA-256 hex digest, so a hostile value can never escape the file/alias
+// namespace and distinct ids can never collide into one namespace (the
+// 2026-09 audit's finding L2 against the character-stripping this replaces).
 
 package app.alpensync.core.auth.store
 
@@ -90,7 +92,7 @@ class EncryptedSecretStore private constructor(
          * (which touches Keystore) runs at a predictable lifecycle point.
          */
         fun create(context: Context, accountId: String): EncryptedSecretStore {
-            val safeAccount = sanitize(accountId)
+            val safeAccount = AccountStorageKey.of(accountId)
             val masterKey = MasterKey.Builder(context.applicationContext)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
                 .setRequestStrongBoxBacked(true)
@@ -103,13 +105,6 @@ class EncryptedSecretStore private constructor(
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
             )
             return EncryptedSecretStore(prefs, KeystoreAesGcmKek(KEK_ALIAS_PREFIX + safeAccount))
-        }
-
-        /** Keep the account id safe for file names and Keystore aliases. */
-        private fun sanitize(accountId: String): String {
-            val cleaned = accountId.filter { it.isLetterOrDigit() || it == '-' || it == '_' }
-            require(cleaned.isNotEmpty()) { "accountId must contain at least one safe character" }
-            return cleaned
         }
     }
 }

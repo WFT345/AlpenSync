@@ -6,10 +6,12 @@
     - READ_CONTACTS / WRITE_CONTACTS (M2d): the SyncAdapter writes RawContacts
       under our own account type and reads back only what it wrote; granted
       at runtime with an honest rationale on the home screen.
-    - GET_ACCOUNTS / AUTHENTICATE_ACCOUNTS / MANAGE_ACCOUNTS: account
-      creation + lookup for our own account type (same-uid authenticator
-      needs none of them on API 26+, but older calls check them; declared
-      like pcontacts does — they grant nothing beyond our own account).
+    - GET_ACCOUNTS / AUTHENTICATE_ACCOUNTS / MANAGE_ACCOUNTS are
+      deliberately ABSENT (dropped at the 2026-09 audit, finding L3):
+      minSdk is 26, and on API 26+ a same-uid authenticator needs none of
+      them for its own account type — AUTHENTICATE/MANAGE were removed
+      from the platform at API 23. All AccountManager calls here touch
+      only our own type (getAccountsByType/addAccountExplicitly).
     - READ/WRITE_SYNC_SETTINGS + READ_SYNC_STATS: marking our account
       syncable and poking requestSync from the WorkManager scheduler.
     - POST_NOTIFICATIONS (API 33+): heads-up when Proton drops the
@@ -18,21 +20,13 @@
   The account/sync services themselves are declared in :module-contacts'
   manifest and merged in.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
 
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <uses-permission
-        android:name="android.permission.AUTHENTICATE_ACCOUNTS"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission
-        android:name="android.permission.MANAGE_ACCOUNTS"
-        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.READ_SYNC_STATS" />

@@ -58,8 +58,14 @@ class CapturedVectorsTest {
         val vectors = loadVectors()
         assertTrue("vectors file must contain computeKeyPassword entries", vectors.keyPassword.isNotEmpty())
         for (v in vectors.keyPassword) {
+            // derive returns ASCII bytes since the L1 audit fix; the
+            // vectors stay the captured @protontech/crypto strings.
             val actual = ComputeKeyPassword.derive(v.password.toCharArray(), v.saltB64)
-            assertEquals("computeKeyPassword vector '${v.label}' mismatch", v.expected, actual)
+            assertEquals(
+                "computeKeyPassword vector '${v.label}' mismatch",
+                v.expected,
+                String(actual, Charsets.US_ASCII),
+            )
         }
     }
 

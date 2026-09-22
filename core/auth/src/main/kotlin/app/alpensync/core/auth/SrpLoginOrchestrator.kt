@@ -367,8 +367,15 @@ class SrpLoginOrchestrator(
         val saltB64 = saltDto.keySalt
             ?: error("primary key has null KeySalt — key activation pending")
 
+        // derive returns caller-owned bytes (audit finding L1): the store
+        // wraps a copy under the Keystore KEK, so ours is zeroed on every
+        // exit path.
         val keyPassword = ComputeKeyPassword.derive(password, saltB64)
-        secretStore.setKeyPassword(keyPassword.toByteArray(Charsets.UTF_8))
+        try {
+            secretStore.setKeyPassword(keyPassword)
+        } finally {
+            keyPassword.fill(0)
+        }
     }
 
     private fun clearPendingTwoFactorPassword() {

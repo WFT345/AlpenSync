@@ -4,6 +4,7 @@
 package app.alpensync.contacts.store
 
 import app.alpensync.core.api.log.SafeLog
+import app.alpensync.core.auth.store.AccountStorageKey
 import app.alpensync.core.auth.store.KeystoreAesGcmKek
 import app.alpensync.core.db.dao.CanonicalVCardDao
 import app.alpensync.core.db.entity.CanonicalVCardEntity
@@ -93,17 +94,16 @@ class CanonicalVCardStore internal constructor(
     companion object {
         private const val KEK_ALIAS_PREFIX = "alpensync.vcard.kek."
 
-        /** Production construction: wraps under a per-account Keystore key, exactly the token store's pattern. */
+        /**
+         * Production construction: wraps under a per-account Keystore key,
+         * exactly the token store's pattern — including the alias
+         * namespacing via [AccountStorageKey] (audit finding L2: this
+         * class used to carry its own copy of the collision-prone
+         * character-stripping sanitize).
+         */
         fun create(dao: CanonicalVCardDao, accountId: String): CanonicalVCardStore {
-            val kek = KeystoreAesGcmKek(KEK_ALIAS_PREFIX + sanitize(accountId))
+            val kek = KeystoreAesGcmKek(KEK_ALIAS_PREFIX + AccountStorageKey.of(accountId))
             return CanonicalVCardStore(dao, kek::wrap, kek::unwrap, kek::delete)
-        }
-
-        /** Same account-id rule as the M1 secret store: never let a hostile value escape the alias namespace. */
-        private fun sanitize(accountId: String): String {
-            val cleaned = accountId.filter { it.isLetterOrDigit() || it == '-' || it == '_' }
-            require(cleaned.isNotEmpty()) { "accountId must contain at least one safe character" }
-            return cleaned
         }
     }
 }
