@@ -22,7 +22,7 @@ kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
 okhttp = "5.4.0"
 retrofit = "3.0.0"
-bouncycastle = "1.85"
+bouncycastle = "1.86"
 # 1.1.0 is the last Jetpack release of EncryptedSharedPreferences (deprecated
 # in 1.1.0-alpha07). Stay on the official artifact; do not rewrite the store
 # in this bump.
