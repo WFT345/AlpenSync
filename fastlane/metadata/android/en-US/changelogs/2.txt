@@ -1,0 +1,5 @@
+Security hardening release.
+
+Network requests are now strictly confined to Proton's API origin and redirects are never followed; the derived mailbox passphrase is wiped from memory after use; per-account storage names are collision-proof; unused legacy account permissions were removed from the manifest.
+
+No functional changes to sync.
