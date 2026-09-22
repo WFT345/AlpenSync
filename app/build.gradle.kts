@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -15,6 +17,23 @@ android {
         versionName = "0.1.1"
     }
 
+    signingConfigs {
+        // keystore.properties exists only on the release machine (gitignored;
+        // the keystore itself lives outside the repo). F-Droid and CI build
+        // without it and produce the same unsigned release APK as before.
+        val keystoreProperties = rootProject.file("keystore.properties")
+        if (keystoreProperties.exists()) {
+            create("release") {
+                val props = Properties()
+                keystoreProperties.inputStream().use { props.load(it) }
+                storeFile = file(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             // Minification is exercised from M0 so the pcontacts lesson
@@ -25,11 +44,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // No signing config yet: F-Droid builds from source and signs with
-            // its own key, so the F-Droid release needs nothing here. A local
-            // config lands at M4 (plan Section 6) for self-distributed APKs;
-            // release builds until then are unsigned and exist only to
-            // exercise minification in CI — never distributed.
+            // Signed only when keystore.properties is present (self-distributed
+            // GitHub releases). Absent it stays unsigned: F-Droid signs its own
+            // builds and CI only exercises minification.
+            signingConfig = signingConfigs.findByName("release")
         }
         debug {
             // Defaults; no debug-only keys, no debug-only logging of secrets (Rule 1).

@@ -39,5 +39,15 @@ We will acknowledge the report and say whether we can reproduce it.
 
 ## Release builds
 
-Release APKs are minified. There is no Play signing key in this repository.
+Release APKs on GitHub Releases are signed with the AlpenSync developer
+key. The signing certificate SHA-256 digest is:
+
+```
+8d2781dc40ad1b55a0ea9bf79f6232bfe8a53b791d32361c8d8fa467b8f578ef
+```
+
+Check it with `apksigner verify --print-certs`. An APK with any other
+signer is not ours.
+
+Release APKs are minified. No signing key material is in this repository.
 Do not send private keys or Proton passwords in a report.

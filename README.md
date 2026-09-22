@@ -19,8 +19,9 @@
 <p align="center">
   <a href="https://alpensync.org"><img src="https://img.shields.io/badge/site-alpensync.org-9bb4c4?style=flat-square&labelColor=07090c" alt="alpensync.org"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-9bb4c4?style=flat-square&labelColor=07090c" alt="GPL-3.0"></a>
+  <a href="https://github.com/WFT345/AlpenSync/releases"><img src="https://img.shields.io/github/v/tag/WFT345/AlpenSync?style=flat-square&labelColor=07090c&color=9bb4c4&label=release" alt="Latest release"></a>
+  <a href="https://github.com/WFT345/AlpenSync/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/WFT345/AlpenSync/ci.yml?branch=main&style=flat-square&labelColor=07090c" alt="CI"></a>
   <a href="#status"><img src="https://img.shields.io/badge/contacts-ready-9bb4c4?style=flat-square&labelColor=07090c" alt="Contacts ready"></a>
-  <a href="#status"><img src="https://img.shields.io/badge/status-in%20development-9bb4c4?style=flat-square&labelColor=07090c" alt="In development"></a>
   <a href="#status"><img src="https://img.shields.io/badge/android-8%2B-9bb4c4?style=flat-square&labelColor=07090c" alt="Android 8+"></a>
   <a href="#status"><img src="https://img.shields.io/badge/play%20services-none-9bb4c4?style=flat-square&labelColor=07090c" alt="No Play Services"></a>
 </p>
@@ -29,6 +30,8 @@
   <a href="#what-it-does">What it does</a> ·
   <a href="#how-sync-works">How sync works</a> ·
   <a href="#read-this-first">Read this first</a> ·
+  <a href="#hardening">Hardening</a> ·
+  <a href="#install">Install</a> ·
   <a href="#build">Build</a> ·
   <a href="PRIVACY.md">Privacy</a> ·
   <a href="TERMS.md">Terms</a> ·
@@ -82,11 +85,26 @@ AlpenSync only writes its own account on the device. It does not scan Phone, Goo
 
 Two-password Proton accounts (a separate mailbox password) are not supported yet.
 
+## Hardening
+
+- **No backups, no transfers.** `android:allowBackup="false"` plus `dataExtractionRules` that exclude everything. The token store and the contact database never leave in a cloud backup or a phone-to-phone transfer. Sign in again on the new phone; Proton has the book.
+- **Credentials wrapped twice.** Session tokens sit in EncryptedSharedPreferences under a StrongBox-requested master key. The mailbox key password is wrapped again, under a per-account hardware Keystore AES-256-GCM key. Logout clears the entries and deletes the Keystore alias.
+- **Ciphertext at rest.** Canonical vCards are stored encrypted in the local database. Conflict logs keep SHA-256 hashes of the conflicting values, never the values.
+- **One origin.** An OkHttp interceptor confines every request to Proton's API origin, registered at both the application and the network layer. Redirects are never followed. No certificate override, no hostname-verification override, and no custom trust manager exists anywhere in the tree. Certificates are deliberately not pinned, so you can read the traffic with your own proxy.
+- **Logging cannot leak.** The log API takes a fixed event enum and an optional integer. It has no string parameter, so a token or a contact value has nothing to travel in. Raw `android.util.Log` is banned in the core modules by detekt.
+- **Pinned supply chain.** Every dependency artifact is pinned by SHA-256 through Gradle dependency verification. CI validates the Gradle wrapper checksum, runs gitleaks over the full history, and runs CodeQL.
+
+Found a hole? [SECURITY.md](SECURITY.md) says how to report it privately.
+
 ## Status
 
-Contacts sync is ready to use on GrapheneOS. Two-way pull, push of edits, create, and delete, plus a persistent outbox. A first pull has been verified on a Pixel running GrapheneOS.
+Contacts sync is ready. Two-way pull, push of edits, create, and delete, plus a persistent outbox.
 
-The project is still in development. The Proton API is unofficial and can change. There is no Play Store or F-Droid build yet. Calendar and mail come later. Install from source.
+The current version is **v0.1.1**, a security-hardening release on top of 0.1.0. Per-version notes are in [fastlane/metadata/android/en-US/changelogs/](fastlane/metadata/android/en-US/changelogs/); [2.txt](fastlane/metadata/android/en-US/changelogs/2.txt) is the 0.1.1 entry.
+
+Still pre-1.0. The Proton API is unofficial and can change. There is no Play Store or F-Droid listing yet. Calendar and mail come later. Install a signed release APK or build from source.
+
+Questions and support go to [Discussions](https://github.com/WFT345/AlpenSync/discussions). Security reports go to [SECURITY.md](SECURITY.md) privately, never a public issue.
 
 | | |
 | --- | --- |
@@ -97,6 +115,26 @@ The project is still in development. The Proton API is unofficial and can change
 | Telemetry | None |
 | Network | Proton hosts only |
 | License | [GPL-3.0-only](LICENSE) |
+
+## Install
+
+Get the signed APK from [GitHub Releases](https://github.com/WFT345/AlpenSync/releases). For automatic updates, point [Obtainium](https://github.com/ImranR98/Obtainium) at `https://github.com/WFT345/AlpenSync`.
+
+Every release APK is signed with the AlpenSync developer key. Verify before installing:
+
+```
+apksigner verify --print-certs alpensync-0.1.1.apk
+```
+
+The certificate SHA-256 digest must be:
+
+```
+8d2781dc40ad1b55a0ea9bf79f6232bfe8a53b791d32361c8d8fa467b8f578ef
+```
+
+Anything else means the APK is not from this project. Do not install it.
+
+A debug build installed from source carries a different signature. Release APKs cannot update it; uninstall the debug build first.
 
 ## Build
 
